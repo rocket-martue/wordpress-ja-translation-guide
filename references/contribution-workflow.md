@@ -1,77 +1,93 @@
 # PTE権限の有無で変わる作業フロー
 
-[翻訳ハンドブック](https://ja.wordpress.org/team/handbook/translation/)の「承認者について」、および[WordPress本体、プラグイン、テーマの翻訳手順](https://ja.wordpress.org/team/handbook/translation/wordpress-translation-steps/)に基づく。SKILL.mdの要点を補足する詳細資料。
+[Polyglotsハンドブック / translate.wordpress.org (GlotPress)](https://make.wordpress.org/polyglots/handbook/translating/glotpress-translate-wordpress-org/)の「User Roles and Permissions」「Importing External Files」、および[日本語翻訳ハンドブック](https://ja.wordpress.org/team/handbook/translation/)の「承認者について」に基づく。SKILL.mdの要点を補足する詳細資料。
 
 ## 目次
 
 - 1. 承認者の種類(GTE / PTE)
-- 2. 共通して必須の手順
-- 3. PTE保有プロジェクトの作業フロー
-- 4. PTE非保有プロジェクトの作業フロー
+- 2. Import Translations機能の権限差(重要な訂正)
+- 3. 共通の作業フロー(PTE有無に関わらず一括処理が可能)
+- 4. 自動化してよい範囲 / してはいけない範囲
 - 5. PTE権限のリクエスト
 
 ## 1. 承認者の種類(GTE / PTE)
 
-translate.wordpress.org上で行われた翻訳は以下のメンバーによって承認される。
+translate.wordpress.org上のユーザーロールは3種類: Guest(未ログイン)、Contributor(ログイン済み一般ユーザー)、Translation Editor。
 
-- **GTE (Global Translation Editors)**: コア、およびすべてのプラグインとテーマを承認可能
-- **PTE (Project Translation Editors)**: 個別のプラグイン・テーマを承認可能(自分が権限を持つプロジェクトのみ)
+Translation Editorはさらに2種類に分かれる。
 
-ユーザーがPTE権限を持つかどうかは、対象プロジェクトごとに異なる。一人のユーザーでも、あるプラグインではPTE、別のプラグインでは権限なし、という状態がふつうにあり得る。
+- **GTE (General/Global Translation Editor)**: コア、およびすべてのプラグインとテーマを承認可能。コア以外のプロジェクトへのインポートもCurrentとして反映できる
+- **PTE (Project Translation Editor)**: 自分が権限を持つ個別のプラグイン・テーマのみ承認可能
 
-**作業前に必ず確認すること**: 翻訳作業の依頼を受けたら、対象プロジェクトについてユーザーがPTE権限を持っているかどうかをまず確認する(すでに会話内で明言されていれば再確認は不要)。確認方法の例:
+PTE権限はプロジェクトごとに付与されるため、「あるプラグインではPTEだが、別のプラグインでは権限なし」という状態もふつうにあり得る。
+
+**作業前に必ず確認すること**: 翻訳作業の依頼を受けたら、対象プロジェクトについてユーザーがPTE権限を持っているかどうかを確認する(すでに会話内で明言されていれば再確認は不要)。確認方法の例:
 
 - 自分の[WordPress.orgプロフィールページ](https://profiles.wordpress.org/)の「Translations」セクションに、PTEを持つプロジェクト一覧が表示される
-- 対象プロジェクトの翻訳ページ(`https://translate.wordpress.org/projects/...`)で、ログイン時に「Import」「Approve」などの操作が見えるかどうかでも判断できる
+- 対象プロジェクトの翻訳ページでImport Translationsを開いた際、アップロード時のステータス選択肢に「Current」が出るかどうかでも判断できる(出ればPTE/GTE、出なければ一般コントリビューター)
 
-不明な場合は、ユーザーに直接尋ねる。
+## 2. Import Translations機能の権限差(重要な訂正)
 
-## 2. 共通して必須の手順(PTE有無を問わず)
+**「PTEでなければSuggestで一件ずつ提案するしかない」というのは誤り。** 公式ハンドブックには次のように明記されている:
 
-- スタイルガイド・訳語統一ルールへの精査は必須(SKILL.md / notation-rules.md / word-choice-rules.md を参照)
-- 機械翻訳(このSkillによる下訳生成を含む)は精査せずに使わない、というハンドブック明記の原則を守る
-- 自信のない訳語は `[要確認]` として明示し、勝手に確定させない
-- 最終的な人間によるレビューは、PTEであってもなくても省略しない
+> Any WordPress.org user can import plugin and theme translation files using the "Import Translations" feature of GlotPress (Note: only GTEs can import into projects other than plugins and themes).
+>
+> GTEs and PTEs can upload translations as "Current" or "Waiting" status. Others can only upload as "Waiting".
 
-## 3. PTE保有プロジェクトの作業フロー
+つまりプラグイン・テーマの翻訳ファイルインポート自体は、**ログイン済みのWordPress.orgユーザーなら誰でも使える**。PTE権限の有無で変わるのは、反映される**ステータス**だけ。
 
-PTEは、自分が権限を持つプロジェクトについて、翻訳を「Current」状態として直接アップロードできる「Import Translations」機能を利用できる。これにより、複数文字列をまとめて処理する一括フローが現実的に成立する。
+| ユーザーの立場 | Importでアップロードできるステータス | 備考 |
+|---|---|---|
+| 対象プロジェクトのPTE | Current または Waiting | Currentを選べば即時反映 |
+| GTE | Current または Waiting(コア・他種別プロジェクトも対象) | 全プロジェクトに反映可能 |
+| 一般コントリビューター(PTE/GTEでない) | Waiting のみ | Suggestと同じ「承認待ち」状態になるが、1件ずつでなく**一括で**アップロードできる |
 
-### 想定フロー
+一般コントリビューターであっても、`.po`/`.mo`形式のファイルをImport Translations機能で一括アップロードできる。これは「Suggest」ボタンで1文字列ずつ提案するのと比べて効率的な手段であり、Skillによる一括下訳生成のワークフローは**PTEの有無に関わらず成立する**。
+
+なお、インポート時に「未翻訳の文字列」と「既存訳と異なる文字列」が保存され、translate.wordpress.org側に存在しない原文を含むファイルは無視される。
+
+## 3. 共通の作業フロー(PTE有無に関わらず一括処理が可能)
 
 1. **差分検出**: 対象プロジェクトの未翻訳・fuzzy文字列を抽出する(SVN上の最新`.pot`との比較、またはtranslate.wordpress.org上のUntranslatedフィルタを利用)
-2. **既存訳の取得**: GlotPressのエクスポート機能で、すでにCurrentになっている訳を取得し、表記統一の参考にする
+2. **既存訳の取得**: Exportリンクから、すでにCurrentになっている訳を取得し、表記統一の参考にする
 3. **下訳生成**: このSkillのルールに従って訳文ドラフトを生成する
-4. **自動バリデーション**: プレースホルダー一致・ブランド名の未翻訳・表記ルール違反を機械的にチェックする
-5. **人間レビュー**: PTE本人が目視で確認・修正する(ここは省略不可)
-6. **Import Translationsで反映**: `.po`をアップロードし、Currentとして反映する
+4. **自動バリデーション**: プレースホルダー一致・ブランド名の未翻訳・表記ルール違反を機械的にチェックする(`scripts/validate_po.py` を使う)
+5. **人間レビュー**: ユーザー本人が目視で確認・修正する(ここは省略不可)
+6. **Import Translationsでアップロード**: `.po`をアップロードする
+   - PTE/GTEの場合: Current(即時反映)かWaiting(承認待ち)かを選べる
+   - 一般コントリビューターの場合: Waitingとしてアップロードされる(GTE/PTEの承認を待つ)
 
-### 自動化してよい範囲 / してはいけない範囲
+文字列の数が少ない場合は、Import Translationsを使わず、画面上の「Suggest」ボタンで1件ずつ提案する従来の方法でもよい。どちらの手段を使うかはユーザーの裁量に委ねる。
 
-- 自動化してよい: 差分検出、下訳生成、バリデーションスクリプトの実行
-- 自動化してはいけない: 人間レビューの省略、Import操作そのものの無人実行(操作自体は毎回PTE本人が内容を確認した上で行う)
+### validate_po.py の使い方
 
-## 4. PTE非保有プロジェクトの作業フロー
+```bash
+python scripts/validate_po.py path/to/ja.po
+python scripts/validate_po.py "path/to/languages/*.po"
+python scripts/validate_po.py --errors-only path/to/ja.po  # ERROR のみ表示
+```
 
-PTE権限を持たない一般のコントリビューターは、「Suggest new translation」(翻訳の提案)のみ行える。提案はGUI経由の操作であり、公開APIで直接サジェストを一括投稿する手段は用意されていない。
+チェック項目と重大度:
 
-Polyglotsチームの議論では、承認なし・無人で大量の翻訳パッチが上がってくる仕組みに対して明確な懸念が示されており、提案は一括プッシュではなく一件ずつ内容を確認しながら出すべき、という考え方が共有されている。
+| ルールID | 重大度 | 内容 |
+|----------|--------|------|
+| `PH_MISMATCH` | ERROR | プレースホルダーの数・種類の不一致 |
+| `BRAND_TRANSLITERATION` | ERROR | 「WordPress」の音訳(ワードプレス等) |
+| `FULLWIDTH_DIGIT` | WARN | 全角数字(０-９) |
+| `FULLWIDTH_ALPHA` | WARN | 全角英字(Ａ-Ｚ、ａ-ｚ) |
+| `NUM_SPACING` | WARN | 数字・プレースホルダー直後の不要なスペース |
+| `WRITING_CONVENTION` | WARN | 「下さい」「全て」「既に」等の表記ゆれ |
 
-### 想定フロー
+ERROR が残った状態での Import は行わない。WARN は目視判断のうえ修正する。
 
-1. **下訳生成**: このSkillのルールに従って訳文ドラフトを生成する(差分検出・既存訳取得はPTEの場合と同様に行ってよい)
-2. **自動バリデーション**: プレースホルダー一致などを機械的にチェックする
-3. **人間レビュー**: ユーザー本人が一件ずつ内容を確認する
-4. **Suggestボタンで提案**: translate.wordpress.orgの画面上で、確認した文字列ごとに手動でSuggestする
-5. **承認待ち**: GTEまたは対象プロジェクトのPTEによる承認を待つ
+## 4. 自動化してよい範囲 / してはいけない範囲
 
-### 自動化してよい範囲 / してはいけない範囲
-
-- 自動化してよい: 差分検出、下訳生成、バリデーションスクリプトの実行
-- 自動化してはいけない: Suggest操作そのもの(ブラウザ操作の自動化や、無人での一括投稿は承認者の信頼を損ない、提案の一括拒否につながりかねない)。提案は必ずユーザー自身が一件ずつ画面上で行う
+- 自動化してよい: 差分検出、下訳生成、バリデーションスクリプトの実行、アップロード用`.po`ファイルの組み立て
+- 自動化してはいけない: 人間レビューの省略、Import操作そのものを無人で実行すること(ファイルの内容を毎回ユーザー本人が確認した上で、手動でアップロードする)
+- **PTE/GTEでCurrentを選べる場合でも**、人間レビューを経ずに即時反映してはいけない。一般コントリビューターとしてWaitingでアップロードする場合も同様で、「どうせ承認待ちだから精査しなくていい」という考え方はしない。未精査の機械翻訳を大量に投入すると、承認者の負担になり、提案が一括拒否される原因になる(ハンドブックに明記された機械翻訳の精査義務)
 
 ## 5. PTE権限のリクエスト
 
 自作のプラグイン・テーマを自分で翻訳したい場合や、継続して特定のプラグイン・テーマを翻訳したい場合は、翻訳ガイドラインに沿った翻訳の実績があればPTE権限をリクエストできる([翻訳承認・レビューのリクエスト手順](https://ja.wordpress.org/team/handbook/translation/wordpress-translation-steps/#%e7%bf%bb%e8%a8%b3%e6%89%bf%e8%aa%8d-%e3%83%ac%e3%83%93%e3%83%a5%e3%83%bc-%e3%81%ae%e3%83%aa%e3%82%af%e3%82%a8%e3%82%b9%e3%83%88))。
 
-ユーザーが「このプロジェクトをよく翻訳しているがPTEは持っていない」と話している場合、状況に応じてPTEリクエストの選択肢があることを伝えてよい。ただし、リクエストするかどうかの判断はユーザーに委ねること。
+ユーザーが「このプロジェクトをよく翻訳しているがPTEは持っていない」と話している場合、状況に応じてPTEリクエストの選択肢があることを伝えてよい。ただし、リクエストするかどうかの判断はユーザーに委ねること。PTEを持たなくても一括Import(Waiting)自体は可能なので、PTE取得は「即時反映したいか」「承認プロセスを背負いたいか」という判断軸で勧めるとよい。
