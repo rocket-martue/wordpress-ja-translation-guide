@@ -86,6 +86,10 @@ def package_skill(skill_dir: Path, output_dir: Path) -> Path:
 
 
 def main() -> None:
+    if sys.platform == 'win32':
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
     parser = argparse.ArgumentParser(
         description=f"{SKILL_DIR.name} の .skill ファイルを生成する"
     )
