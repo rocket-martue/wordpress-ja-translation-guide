@@ -18,13 +18,13 @@ ja.wordpress.org 公式の[翻訳ハンドブック](https://ja.wordpress.org/te
 - 公式用語集・Consistency Toolへの参照
 - 用語選択に確信が持てない箇所は `[要確認]` として明示し、断定しない
 - `.po`形式での出力フォーマットを維持
-- **PTE(Project Translation Editor)権限の有無に応じた作業フローの案内**(Import Translationsはログイン済みユーザーなら誰でも使える。PTE権限の有無で変わるのは「Current / Waiting どちらのステータスでアップロードできるか」だけ)
+- **PTE(Project Translation Editor)権限の有無に応じた反映ステータスの案内**(Current即時反映か、Waiting承認待ちか)
 
 詳細なルールと例は以下を参照してください:
 
 - [`references/notation-rules.md`](./references/notation-rules.md) — 全角半角・句読点・括弧・カタカナ語の長音記号・日付・プレースホルダー
 - [`references/word-choice-rules.md`](./references/word-choice-rules.md) — 訳語統一・文体ルール・ブランド名・用語集の使い方
-- [`references/contribution-workflow.md`](./references/contribution-workflow.md) — Import Translationsの権限差(Current / Waiting)、共通の作業フロー、自動化してよい範囲・してはいけない範囲
+- [`references/contribution-workflow.md`](./references/contribution-workflow.md) — PTE有無で変わる反映ステータス、自動化してよい範囲・してはいけない範囲
 
 ## 使い方
 
