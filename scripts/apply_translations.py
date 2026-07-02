@@ -114,6 +114,32 @@ def _extract_placeholders(s: str) -> list[str]:
     return sorted(m for m in _PH_RE.findall(s) if m)
 
 
+_PH_NUMBERED_RE = re.compile(r'%\d+\$')
+
+
+def _check_placeholders(expected: list[str], actual: list[str]) -> str | None:
+    """
+    プレースホルダー照合。不一致があればエラーメッセージを返す。
+
+    - 型文字・個数の一致は必須
+    - 番号なし→番号付き(%s→%1$s)は許容(語順変更のため)
+    - 番号付き→番号なしの劣化はエラー
+    """
+    expected_types = sorted(p[-1] for p in expected)
+    actual_types = sorted(p[-1] for p in actual)
+    if expected_types != actual_types:
+        return f"期待値: {expected} / 訳文: {actual}"
+    # 番号付き→番号なしの劣化チェック(%1$s → %s は NG)
+    if any(_PH_NUMBERED_RE.match(p) for p in expected) and any(
+        not _PH_NUMBERED_RE.match(p) for p in actual
+    ):
+        return (
+            f"番号付きプレースホルダーが番号なしに劣化しています\n"
+            f"       期待値: {expected} / 訳文: {actual}"
+        )
+    return None
+
+
 # ---------------------------------------------------------------------------
 # パーサー(未翻訳エントリーと msgstr 行番号を抽出)
 # ---------------------------------------------------------------------------
@@ -363,10 +389,11 @@ def cmd_apply(po_path: Path, translations_arg: str) -> int:
         base = entry.msgid_plural or entry.msgid
         expected_ph = _extract_placeholders(base)
         actual_ph = _extract_placeholders(msgstr)
-        if expected_ph != actual_ph:
+        ph_error = _check_placeholders(expected_ph, actual_ph)
+        if ph_error:
             errors.append(
                 f"[{entry.index}] プレースホルダーが一致しないため書き込みません\n"
-                f"       期待値: {expected_ph} / 訳文: {actual_ph}\n"
+                f"       {ph_error}\n"
                 f"       msgid: \"{base[:80]}\""
             )
             continue
@@ -414,7 +441,7 @@ def cmd_apply(po_path: Path, translations_arg: str) -> int:
     remaining = total - written_count
     pct = int(written_count / total * 100) if total else 0
 
-    validate_script = Path(__file__).parent / "validate_po.py"
+    validate_script = Path(__file__).resolve().parent / "validate_po.py"
 
     print(
         f"✅ {written_count}件書き込みました。"
