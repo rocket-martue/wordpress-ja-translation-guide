@@ -28,7 +28,7 @@ ja.wordpress.org 公式の[翻訳ハンドブック](https://ja.wordpress.org/te
 
 ## 使い方
 
-### .po ファイルのダウウンロード
+### .po ファイルのダウンロード
 
 1. [translate.wordpress.org](https://translate.wordpress.org/) で翻訳対象のプロジェクトを開く
 2. 「Japanese」を選択
