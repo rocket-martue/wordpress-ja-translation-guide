@@ -116,37 +116,43 @@ def _extract_placeholders(s: str) -> list[str]:
 
 _PH_NUMBERED_RE = re.compile(r'%\d+\$')
 _PH_NUM_CAPTURE_RE = re.compile(r'%(\d+)\$')
+_PH_STRIP_NUM_RE   = re.compile(r'\d+\$')   # %1$02d → %02d
+
+
+def _strip_num(ph: str) -> str:
+    """番号部分(%N$)を除去する。%1$02d → %02d"""
+    return _PH_STRIP_NUM_RE.sub('', ph, count=1)
 
 
 def _check_placeholders(expected: list[str], actual: list[str]) -> str | None:
     """
     プレースホルダー照合。不一致があればエラーメッセージを返す。
 
-    - 型文字・個数の一致は必須
-    - expected が全て番号なし、actual が全て番号付き →
+    ステップ 1: 番号部分(%N$)を除去したプレースホルダー文字列の multiset が一致するか（必須）
+      - 幅・精度・フラグを含む: %02d → %d の変更も検出
+      - %1$02d と %02d は同じものとして比較
+    ステップ 2: expected に番号付きあり → Counter(番号・幅/精度/型込み)で完全一致
+    ステップ 3: expected が全て番号なし、actual が全て番号付き →
       番号が 1..N の連番・重複なしであれば許容(語順変更のため)
-    - expected に番号付きあり → actual と多重集合(番号+型)が完全一致
     """
     from collections import Counter
 
-    # 型文字の種類・個数チェック(必須)
-    expected_types = sorted(p[-1] for p in expected)
-    actual_types = sorted(p[-1] for p in actual)
-    if expected_types != actual_types:
+    # ステップ 1: 番号除去後の multiset 一致（幅・精度・型を含む）
+    if Counter(_strip_num(p) for p in expected) != Counter(_strip_num(p) for p in actual):
         return f"期待値: {expected} / 訳文: {actual}"
 
     expected_has_numbered = any(_PH_NUMBERED_RE.match(p) for p in expected)
     actual_has_numbered   = any(_PH_NUMBERED_RE.match(p) for p in actual)
 
     if expected_has_numbered:
-        # expected に番号付きあり → actual も multiset 完全一致(番号・型まで)
+        # ステップ 2: expected に番号付きあり → actual も完全一致(番号+幅/精度/型)
         if Counter(expected) != Counter(actual):
             return (
-                f"番号付きプレースホルダーの番号または型が一致しません\n"
+                f"番号付きプレースホルダーの番号または幅/精度/型が一致しません\n"
                 f"       期待値: {expected} / 訳文: {actual}"
             )
     elif actual_has_numbered:
-        # 番号なし → 番号付きの変換: 番号付きと番号なしの混在は NG
+        # ステップ 3: 番号なし → 番号付きの変換: 混在は NG
         if any(not _PH_NUMBERED_RE.match(p) for p in actual):
             return (
                 f"番号付きと番号なしのプレースホルダーが混在しています\n"

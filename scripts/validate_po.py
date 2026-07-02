@@ -241,6 +241,7 @@ def parse_po(text: str) -> list[PoEntry]:
 _PH_RE = re.compile(r'%%|(%(?:\d+\$)?[-+ 0]*\d*(?:\.\d+)?[sdifu])')
 _PH_NUMBERED_RE = re.compile(r'%\d+\$')
 _PH_NUM_CAPTURE_RE = re.compile(r'%(\d+)\$')
+_PH_STRIP_NUM_RE   = re.compile(r'\d+\$')   # %1$02d → %02d
 
 
 def _extract_placeholders(s: str) -> list[str]:
@@ -255,23 +256,27 @@ def _placeholders_compat(expected: list[str], actual: list[str]) -> bool:
     """
     apply_translations.py と同じ許容ルールでプレースホルダーを検証する。
 
-    - 型文字・個数の一致は必須
-    - expected が全て番号なし、actual が全て番号付き →
-      番号が 1..N の連番・重複なしであれば OK(語順変更のため)
-    - expected に番号付きあり → actual と multiset(番号+型)が完全一致
+    ステップ1: 番号除去後の multiset 一致（幅・精度・型を含む）
+    ステップ2: expected に番号付きあり → Counter(完全一致)
+    ステップ3: expected が全て番号なし、actual が全て番号付き →
+      1..N 連番・重複なしであれば OK(語順変更のため)
     """
-    if sorted(p[-1] for p in expected) != sorted(p[-1] for p in actual):
+    # ステップ1: 番号除去後の multiset 一致（幅・精度・型を含む）
+    if Counter(_PH_STRIP_NUM_RE.sub('', p, 1) for p in expected) != \
+       Counter(_PH_STRIP_NUM_RE.sub('', p, 1) for p in actual):
         return False
 
     expected_has_numbered = any(_PH_NUMBERED_RE.match(p) for p in expected)
     actual_has_numbered   = any(_PH_NUMBERED_RE.match(p) for p in actual)
 
     if expected_has_numbered:
+        # ステップ2: 完全一致を要求
         return Counter(expected) == Counter(actual)
 
     if actual_has_numbered:
+        # ステップ3: 混在は NG、連番チェック
         if any(not _PH_NUMBERED_RE.match(p) for p in actual):
-            return False  # 混在
+            return False
         nums = [int(_PH_NUM_CAPTURE_RE.match(p).group(1)) for p in actual]  # type: ignore[union-attr]
         return sorted(nums) == list(range(1, len(nums) + 1))
 
