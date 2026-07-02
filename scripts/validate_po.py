@@ -441,7 +441,7 @@ _NUM_SPACE_RE = re.compile(r'(\d)[ \t]+(?=' + _JA + r')')
 
 
 def check_number_spacing(entry: PoEntry, filepath: Path) -> list[Violation]:
-    """NUM_SPACING: 数字・プレースホルダー直後の不要なスペース。"""
+    """NUM_SPACING: 数値プレースホルダー(%d等)・半角数字直後の不要なスペース。"""
     violations: list[Violation] = []
 
     for msgstr in _all_msgstrs(entry):

@@ -317,9 +317,22 @@ def cmd_list(po_path: Path, start: int, count: int | None) -> int:
     entries = _find_untranslated(lines)
     total = len(entries)
 
+    # --count / --start の検証
+    if count is not None and count <= 0:
+        print(f"[ERROR] --count は 1 以上の整数を指定してください: {count}", file=sys.stderr)
+        return 2
+
     if total == 0:
         print(f"未翻訳エントリーなし: {po_path}")
         return 0
+
+    if start >= total:
+        print(
+            f"[ERROR] --start {start} は範囲外です"
+            f"(未翻訳エントリーは {total} 件: 0–{total - 1})",
+            file=sys.stderr,
+        )
+        return 2
 
     end = total if count is None else min(start + count, total)
     shown = entries[start:end]
