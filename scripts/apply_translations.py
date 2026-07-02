@@ -14,12 +14,12 @@
 
 使い方:
     # 未翻訳エントリーを一覧表示(翻訳前に確認)
-    python scripts/apply_translations.py path/to/ja.po --list
-    python scripts/apply_translations.py path/to/ja.po --list --start 20 --count 20
+    python /path/to/apply_translations.py path/to/ja.po --list
+    python /path/to/apply_translations.py path/to/ja.po --list --start 20 --count 20
 
     # 翻訳を書き込む(JSON ファイルまたはインライン JSON 文字列)
-    python scripts/apply_translations.py path/to/ja.po translations.json
-    python scripts/apply_translations.py path/to/ja.po '{"0": "訳文A", "1": "訳文B"}'
+    python /path/to/apply_translations.py path/to/ja.po translations.json
+    python /path/to/apply_translations.py path/to/ja.po '{"0": "訳文A", "1": "訳文B"}'
 
     JSON の値は2形式:
       推奨:   {"0": {"msgid": "Original text", "msgstr": "訳文"}}
