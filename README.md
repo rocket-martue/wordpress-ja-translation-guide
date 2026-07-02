@@ -28,6 +28,17 @@ ja.wordpress.org 公式の[翻訳ハンドブック](https://ja.wordpress.org/te
 
 ## 使い方
 
+### .po ファイルのダウウンロード
+
+1. [translate.wordpress.org](https://translate.wordpress.org/) で翻訳対象のプロジェクトを開く
+2. 「Japanese」を選択
+3. Stable または Stable Reademe のいずれかを選択
+4. Untranslated をクリックして未翻訳のものだけを表示する
+5. ページ最下部までスクロールし、「all current」を「only matching the filter」に変更してから「Export」をクリックして .po ファイルをダウンロードする
+6. ダウンロードした .po ファイルの翻訳をAIに依頼する
+7. 翻訳結果を確認し、必要に応じて修正する
+8. 翻訳後の .po ファイルはtranslate.wordpress.org ページ最下部にある「Import Translations」からアップロードする
+
 ### Claude Code / Claude.ai (Desktop, Cowork)
 
 1. このリポジトリをダウンロードまたは `git clone` する
