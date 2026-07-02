@@ -35,6 +35,7 @@ from __future__ import annotations
 import re
 import sys
 import argparse
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -238,6 +239,8 @@ def parse_po(text: str) -> list[PoEntry]:
 
 # %s %d %1$s %2$d など。%% はエスケープ済みリテラルなので除外
 _PH_RE = re.compile(r'%%|(%(?:\d+\$)?[-+ 0]*\d*(?:\.\d+)?[sdifu])')
+_PH_NUMBERED_RE = re.compile(r'%\d+\$')
+_PH_NUM_CAPTURE_RE = re.compile(r'%(\d+)\$')
 
 
 def _extract_placeholders(s: str) -> list[str]:
@@ -246,6 +249,33 @@ def _extract_placeholders(s: str) -> list[str]:
     ソート済みリストを返す(順序入れ替えを許容するため)。
     """
     return sorted(m for m in _PH_RE.findall(s) if m)
+
+
+def _placeholders_compat(expected: list[str], actual: list[str]) -> bool:
+    """
+    apply_translations.py と同じ許容ルールでプレースホルダーを検証する。
+
+    - 型文字・個数の一致は必須
+    - expected が全て番号なし、actual が全て番号付き →
+      番号が 1..N の連番・重複なしであれば OK(語順変更のため)
+    - expected に番号付きあり → actual と multiset(番号+型)が完全一致
+    """
+    if sorted(p[-1] for p in expected) != sorted(p[-1] for p in actual):
+        return False
+
+    expected_has_numbered = any(_PH_NUMBERED_RE.match(p) for p in expected)
+    actual_has_numbered   = any(_PH_NUMBERED_RE.match(p) for p in actual)
+
+    if expected_has_numbered:
+        return Counter(expected) == Counter(actual)
+
+    if actual_has_numbered:
+        if any(not _PH_NUMBERED_RE.match(p) for p in actual):
+            return False  # 混在
+        nums = [int(_PH_NUM_CAPTURE_RE.match(p).group(1)) for p in actual]  # type: ignore[union-attr]
+        return sorted(nums) == list(range(1, len(nums) + 1))
+
+    return True
 
 
 def _all_msgstrs(entry: PoEntry) -> list[str]:
@@ -282,7 +312,7 @@ def check_placeholders(entry: PoEntry, filepath: Path) -> list[Violation]:
             if not msgstr:
                 continue
             actual = _extract_placeholders(msgstr)
-            if expected != actual:
+            if not _placeholders_compat(expected, actual):
                 violations.append(Violation(
                     filepath=filepath,
                     entry=entry,
@@ -297,7 +327,7 @@ def check_placeholders(entry: PoEntry, filepath: Path) -> list[Violation]:
     elif entry.msgstr:
         expected = _extract_placeholders(entry.msgid)
         actual = _extract_placeholders(entry.msgstr)
-        if expected != actual:
+        if not _placeholders_compat(expected, actual):
             violations.append(Violation(
                 filepath=filepath,
                 entry=entry,

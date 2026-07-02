@@ -115,6 +115,7 @@ def _extract_placeholders(s: str) -> list[str]:
 
 
 _PH_NUMBERED_RE = re.compile(r'%\d+\$')
+_PH_NUM_CAPTURE_RE = re.compile(r'%(\d+)\$')
 
 
 def _check_placeholders(expected: list[str], actual: list[str]) -> str | None:
@@ -122,21 +123,43 @@ def _check_placeholders(expected: list[str], actual: list[str]) -> str | None:
     プレースホルダー照合。不一致があればエラーメッセージを返す。
 
     - 型文字・個数の一致は必須
-    - 番号なし→番号付き(%s→%1$s)は許容(語順変更のため)
-    - 番号付き→番号なしの劣化はエラー
+    - expected が全て番号なし、actual が全て番号付き →
+      番号が 1..N の連番・重複なしであれば許容(語順変更のため)
+    - expected に番号付きあり → actual と多重集合(番号+型)が完全一致
     """
+    from collections import Counter
+
+    # 型文字の種類・個数チェック(必須)
     expected_types = sorted(p[-1] for p in expected)
     actual_types = sorted(p[-1] for p in actual)
     if expected_types != actual_types:
         return f"期待値: {expected} / 訳文: {actual}"
-    # 番号付き→番号なしの劣化チェック(%1$s → %s は NG)
-    if any(_PH_NUMBERED_RE.match(p) for p in expected) and any(
-        not _PH_NUMBERED_RE.match(p) for p in actual
-    ):
-        return (
-            f"番号付きプレースホルダーが番号なしに劣化しています\n"
-            f"       期待値: {expected} / 訳文: {actual}"
-        )
+
+    expected_has_numbered = any(_PH_NUMBERED_RE.match(p) for p in expected)
+    actual_has_numbered   = any(_PH_NUMBERED_RE.match(p) for p in actual)
+
+    if expected_has_numbered:
+        # expected に番号付きあり → actual も multiset 完全一致(番号・型まで)
+        if Counter(expected) != Counter(actual):
+            return (
+                f"番号付きプレースホルダーの番号または型が一致しません\n"
+                f"       期待値: {expected} / 訳文: {actual}"
+            )
+    elif actual_has_numbered:
+        # 番号なし → 番号付きの変換: 番号付きと番号なしの混在は NG
+        if any(not _PH_NUMBERED_RE.match(p) for p in actual):
+            return (
+                f"番号付きと番号なしのプレースホルダーが混在しています\n"
+                f"       期待値: {expected} / 訳文: {actual}"
+            )
+        # 番号が 1..N の連番で重複なし
+        nums = [int(_PH_NUM_CAPTURE_RE.match(p).group(1)) for p in actual]  # type: ignore[union-attr]
+        if sorted(nums) != list(range(1, len(nums) + 1)):
+            return (
+                f"番号付きプレースホルダーの番号が 1..N の連番ではありません (重複または欠番)\n"
+                f"       期待値: {expected} / 訳文: {actual}"
+            )
+
     return None
 
 
