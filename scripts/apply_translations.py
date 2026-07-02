@@ -414,13 +414,15 @@ def cmd_apply(po_path: Path, translations_arg: str) -> int:
     remaining = total - written_count
     pct = int(written_count / total * 100) if total else 0
 
+    validate_script = Path(__file__).parent / "validate_po.py"
+
     print(
         f"✅ {written_count}件書き込みました。"
         f"進捗: {written_count}/{total} ({pct}%), 残り {remaining}件"
     )
     if errors:
         print(f"⚠️ {len(errors)}件は書き込めませんでした(上記 [ERROR] を確認)")
-    print(f"次: python scripts/validate_po.py {po_path} で検証してから次のバッチへ")
+    print(f"次: python {validate_script} {po_path} で検証してから次のバッチへ")
 
     return 2 if errors else 0
 
@@ -475,8 +477,12 @@ def _load_translations(arg: str) -> dict[str, tuple[str | None, str]]:
                 raise ValueError(
                     f"インデックス \"{k}\": オブジェクト形式には \"msgstr\" キーが必要です"
                 )
-            msgid = v.get("msgid")
-            result[str(k)] = (None if msgid is None else str(msgid), str(v["msgstr"]))
+            if "msgid" not in v:
+                raise ValueError(
+                    f"インデックス \"{k}\": オブジェクト形式には \"msgid\" キーが必要です"
+                    " (msgid照合なしで使いたい場合は文字列形式を使ってください)"
+                )
+            result[str(k)] = (str(v["msgid"]), str(v["msgstr"]))
         else:
             result[str(k)] = (None, str(v))
     return result

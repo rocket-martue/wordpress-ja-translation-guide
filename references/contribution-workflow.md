@@ -106,7 +106,7 @@ JSON の値は2形式あり、**msgid 照合付きのオブジェクト形式を
 
 ```
 ✅ 20件書き込みました。進捗: 20/190 (10%), 残り 170件
-次: python scripts/validate_po.py path/to/ja.po で検証してから次のバッチへ
+次: python ~/.claude/skills/wordpress-ja-translation-guide/scripts/validate_po.py path/to/ja.po で検証してから次のバッチへ
 ```
 
 **運用ルール(バッチループの標準形)**:
@@ -114,21 +114,25 @@ JSON の値は2形式あり、**msgid 照合付きのオブジェクト形式を
 1. **バッチを作る直前に必ず `--list` を取り直す**。インデックスは呼び出しごとに「その時点で未翻訳のエントリー」へ 0 から振り直されるため、書き込むたびにズレる。複数バッチ分の JSON を事前にまとめて作らない
 2. 訳文を生成し、msgid 照合付きのオブジェクト形式 JSON を作る。ナレーションで「書いた」ことにしない——必ずスクリプトを呼び出してファイルに書き込む
 3. スクリプトが返す進捗と WARN / ERROR を確認する
-4. **バッチ適用のたびに `scripts/validate_po.py` を実行し、ERROR が出たら次のバッチに進む前に修正する**(バッチごとに検証すれば、問題がどのバッチで混入したかすぐ特定できる)
+4. **バッチ適用のたびに `validate_po.py` を実行し、ERROR が出たら次のバッチに進む前に修正する**(apply_translations.py と同じ場所にある。フルパスで呼ぶ)
 5. 未翻訳が無くなるまで 1 に戻る
 
 スクリプトが利用できない環境では、1件ずつ逐次`str_replace`で書き込む。
 
 ### validate_po.py の使い方
 
-> **注**: `validate_po.py` も `apply_translations.py` と同じ場所(Skillインストール先の `scripts/`)にあります。
+> **注**: `validate_po.py` も `apply_translations.py` と同じ場所(Skillインストール先の `scripts/`)にあります。翻訳対象プロジェクトのディレクトリには存在しないため、フルパスで呼び出してください。
 > 完了確認・整合性チェックのために自前のチェックスクリプトをその場で書かず、**必ずこのスクリプトを使うこと**。
 > 即興のチェックは表記ルール違反を拾えないうえ、チェック自体のバグでプレースホルダー欠落を見逃した実例がある。
 
 ```bash
-python scripts/validate_po.py path/to/ja.po
-python scripts/validate_po.py "path/to/languages/*.po"
-python scripts/validate_po.py --errors-only path/to/ja.po  # ERROR のみ表示
+# Claude Code (Skillインストール先)
+python ~/.claude/skills/wordpress-ja-translation-guide/scripts/validate_po.py path/to/ja.po
+python ~/.claude/skills/wordpress-ja-translation-guide/scripts/validate_po.py "path/to/languages/*.po"
+python ~/.claude/skills/wordpress-ja-translation-guide/scripts/validate_po.py --errors-only path/to/ja.po  # ERROR のみ表示
+
+# リポジトリをクローンして使う場合
+python /path/to/wordpress-ja-translation-guide/scripts/validate_po.py path/to/ja.po
 ```
 
 チェック項目と重大度:
