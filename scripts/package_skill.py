@@ -22,8 +22,10 @@ from pathlib import Path
 SKILL_DIR = Path(__file__).resolve().parent.parent
 
 # .skill に含めないディレクトリ・ファイル
-EXCLUDE_DIR_NAMES = {".git", ".claude", "__pycache__", "node_modules", "scripts", "dist", "evals"}
-EXCLUDE_FILE_NAMES = {".DS_Store", ".gitignore", "CLAUDE.md"}
+# 注: scripts/ ディレクトリ自体は同梱する(apply_translations.py と validate_po.py は
+# SKILL.md が参照するランタイムツールのため)。ビルドツールの package_skill.py のみ除外する
+EXCLUDE_DIR_NAMES = {".git", ".claude", "__pycache__", "node_modules", "dist", "evals"}
+EXCLUDE_FILE_NAMES = {".DS_Store", ".gitignore", "CLAUDE.md", "package_skill.py"}
 EXCLUDE_SUFFIXES = {".pyc", ".skill"}
 
 
