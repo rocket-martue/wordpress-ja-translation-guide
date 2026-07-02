@@ -405,7 +405,7 @@ def cmd_apply(po_path: Path, translations_arg: str) -> int:
             errors.append(f"インデックス \"{idx_str}\": msgstr が空文字列です(未翻訳のまま書き込む操作は無効)")
             continue
 
-        # 0-1. 負数インデックスは誤入力として正強エラー
+        # 0-1. 負数インデックスは誤入力として強制エラー
         if idx < 0:
             errors.append(f"インデックス {idx} は無効です(負数は使用できません。--list でインデックスを確認してください)")
             continue
