@@ -322,6 +322,10 @@ def cmd_list(po_path: Path, start: int, count: int | None) -> int:
         print(f"[ERROR] --count は 1 以上の整数を指定してください: {count}", file=sys.stderr)
         return 2
 
+    if start < 0:
+        print(f"[ERROR] --start に負数は指定できません: {start}", file=sys.stderr)
+        return 2
+
     if total == 0:
         print(f"未翻訳エントリーなし: {po_path}")
         return 0
@@ -399,6 +403,11 @@ def cmd_apply(po_path: Path, translations_arg: str) -> int:
         # 0. 空訳文チェック
         if not msgstr:
             errors.append(f"インデックス \"{idx_str}\": msgstr が空文字列です(未翻訳のまま書き込む操作は無効)")
+            continue
+
+        # 0-1. 負数インデックスは誤入力として正強エラー
+        if idx < 0:
+            errors.append(f"インデックス {idx} は無効です(負数は使用できません。--list でインデックスを確認してください)")
             continue
 
         # 1. インデックス位置の msgid と照合
