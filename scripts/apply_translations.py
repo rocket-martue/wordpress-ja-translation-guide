@@ -377,6 +377,11 @@ def cmd_apply(po_path: Path, translations_arg: str) -> int:
             errors.append(f"インデックス \"{idx_str}\" が整数ではありません")
             continue
 
+        # 0. 空訳文チェック
+        if not msgstr:
+            errors.append(f"インデックス \"{idx_str}\": msgstr が空文字列です(未翻訳のまま書き込む操作は無効)")
+            continue
+
         # 1. インデックス位置の msgid と照合
         entry: _Entry | None = None
         if 0 <= idx < total and (expected_msgid is None or entries[idx].msgid == expected_msgid):
