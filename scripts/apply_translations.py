@@ -403,10 +403,12 @@ def cmd_apply(po_path: Path, translations_arg: str) -> int:
                     f"(バッチを作る直前に --list を取り直してください)"
                 )
             elif len(matches) > 1:
+                candidates = ", ".join(f"[{e.index}] {e.location}" for e in matches)
                 errors.append(
                     f"インデックス {idx}: msgid \"{expected_msgid[:60]}\" が複数の"
-                    f"未翻訳エントリーに一致します(msgctxt 違いの可能性)。"
-                    f"--list を取り直して正しいインデックスで指定し直してください"
+                    f"未翻訳エントリーに一致します(msgctxt 違いの可能性)。\n"
+                    f"       一致した候補: {candidates}\n"
+                    f"       --list を取り直して正しいインデックスで指定し直してください"
                 )
                 continue
             else:
@@ -543,9 +545,24 @@ def _load_translations(arg: str) -> dict[str, tuple[str | None, str]]:
                     f"インデックス \"{k}\": オブジェクト形式には \"msgid\" キーが必要です"
                     " (msgid照合なしで使いたい場合は文字列形式を使ってください)"
                 )
-            result[str(k)] = (str(v["msgid"]), str(v["msgstr"]))
+            if not isinstance(v["msgid"], str):
+                raise ValueError(
+                    f"インデックス \"{k}\": \"msgid\" の値は文字列でなければなりません"
+                    f" (受け取った型: {type(v['msgid']).__name__})"
+                )
+            if not isinstance(v["msgstr"], str):
+                raise ValueError(
+                    f"インデックス \"{k}\": \"msgstr\" の値は文字列でなければなりません"
+                    f" (受け取った型: {type(v['msgstr']).__name__})"
+                )
+            result[str(k)] = (v["msgid"], v["msgstr"])
         else:
-            result[str(k)] = (None, str(v))
+            if not isinstance(v, str):
+                raise ValueError(
+                    f"インデックス \"{k}\": 値は文字列またはオブジェクトでなければなりません"
+                    f" (受け取った型: {type(v).__name__})"
+                )
+            result[str(k)] = (None, v)
     return result
 
 
