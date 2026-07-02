@@ -200,8 +200,8 @@ def _find_untranslated(lines: list[str]) -> list[_Entry]:
         nonlocal msgstr, msgstr_lineno, msgstr_plural, msgstr_plural_linenos, field
         if msgid and not is_fuzzy:
             if msgid_plural:
-                # 複数形: msgstr[0] が空なら未翻訳
-                if msgstr_plural_linenos and not msgstr_plural.get(0, ""):
+                # 複数形: msgstr[0] 行が存在し、かつ空なら未翻訳
+                if 0 in msgstr_plural_linenos and not msgstr_plural.get(0, ""):
                     entries.append(_Entry(
                         index=len(entries),
                         msgid=msgid,
