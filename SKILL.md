@@ -1,6 +1,6 @@
 ---
 name: wordpress-ja-translation-guide
-description: WordPressコア・プラグイン・テーマの文字列(.po/.pot/readme.txt等)を日本語に翻訳する、既存の日本語訳をレビューする、またはtranslate.wordpress.orgへ提案/インポートする前に表記をチェックする際に必ず使うSkill。ja.wordpress.org公式の翻訳スタイルガイド(全角半角ルール・括弧やカギ括弧の使い方・カタカナ語の長音記号・訳語統一ルール・プレースホルダーの扱い・テーマ名やプラグイン名を翻訳しないルールなど)を反映し、表記の一貫性を担保する。さらにPTE(Project Translation Editor)権限の有無によって異なる反映ステータス(Current即時反映か、Waiting承認待ちか)も案内する。「WordPressの文字列を日本語に訳して」「.poファイルを翻訳して」「この訳、規約通りになってる?」「PTEとしてインポートする前にチェックして」「このプラグインに翻訳を提案したい」のような依頼が来たら、このSkillを必ず参照すること。
+description: WordPressコア・プラグイン・テーマの文字列(.po/.pot/readme.txt等)を日本語に翻訳する、既存の日本語訳をレビューする、またはtranslate.wordpress.orgへ提案/インポートする前に表記をチェックする際に必ず使うSkill。ja.wordpress.org公式の翻訳スタイルガイド(全角半角ルール・括弧やカギ括弧の使い方・カタカナ語の長音記号・訳語統一ルール・プレースホルダーの扱い・テーマ名やプラグイン名を翻訳しないルールなど)を反映し、表記の一貫性を担保する。「WordPressの文字列を日本語に訳して」「.poファイルを翻訳して」「この訳、規約通りになってる?」「PTEとしてインポートする前にチェックして」「このプラグインに翻訳を提案したい」のような依頼が来たら、このSkillを必ず参照すること。
 ---
 
 # WordPress 日本語翻訳スタイルガイド Skill
@@ -11,16 +11,8 @@ description: WordPressコア・プラグイン・テーマの文字列(.po/.pot/
 
 - WordPressプラグイン/テーマ/コアの`.po`・`.pot`文字列を日本語に翻訳するとき
 - 既存の日本語訳をレビュー・修正するとき
-- `translate.wordpress.org`へ提案する、またはPTE権限でインポートする前に、規約違反がないか最終チェックするとき
+- `translate.wordpress.org`へ提案する、またはインポートする前に、規約違反がないか最終チェックするとき
 - readme.txtやドキュメントの日本語訳を作るとき
-
-## 作業を始める前に: PTE権限の確認
-
-翻訳の反映フローは、ユーザーが**対象プロジェクトについて**PTE(Project Translation Editor)権限を持っているかどうかで変わる。ただし「PTEでなければSuggestで一件ずつ提案するしかない」というのは誤り——プラグイン・テーマの翻訳ファイルはログイン済みのWordPress.orgユーザーなら誰でもImport Translations機能で**一括アップロード**できる。違いは反映される**ステータス**だけで、PTE/GTEは`Current`(即時反映)か`Waiting`(承認待ち)を選べるのに対し、一般コントリビューターは`Waiting`のみとなる。
-
-会話内でまだ明らかでなければ、作業に取り掛かる前にユーザーに確認すること。PTE権限はプロジェクトごとに付与されるため、「ある特定のプラグインではPTEだが、別のプラグインでは権限なし」という状態もふつうにあり得る。
-
-詳しい確認方法・権限差の詳細は `references/contribution-workflow.md` を参照すること。
 
 ## 最重要: 機械翻訳の精査義務
 
@@ -119,7 +111,7 @@ msgstr "訳文の文字列"
 - 完了確認・整合性チェックのために自前のスクリプトをその場で書かない。**必ず `validate_po.py` を使う**(apply_translations.py と同じ場所にある。フルパス例: `~/.claude/skills/wordpress-ja-translation-guide/scripts/validate_po.py`。即興チェックは表記ルール違反を拾えないうえ、チェック自体のバグでプレースホルダー欠落を見逃した実例がある)
 - スクリプトが利用できない環境では、1件ずつ逐次 `str_replace` で書き込む
 
-コマンドリファレンスと詳細は `references/contribution-workflow.md` の「3.5」を参照。
+コマンドリファレンスと詳細は `references/contribution-workflow.md` の「1.1」を参照。
 
 ## 出力後のセルフチェックリスト
 
@@ -133,10 +125,9 @@ msgstr "訳文の文字列"
 - [ ] 「ください」「すべて」「すでに」など指定の表記を使っているか
 - [ ] 既存の承認済み訳と表記が揺れていないか(Consistency Toolで確認推奨)
 - [ ] 用語選択に確信が持てない箇所は `[要確認]` と明記したか
-- [ ] 対象プロジェクトでのPTE権限の有無を確認し、適切な反映ステータス(Current / Waiting)を案内したか
 
 ## 重要な注意
 
 - このSkillはja.wordpress.org公式の用語集(glossary)を全件収録していない。判断に迷う訳語は確定させず、`[要確認]`として明示すること
 - このSkillが生成した訳文は**ドラフトであり最終版ではない**。`translate.wordpress.org`への反映(提案・インポートいずれも)は、必ず人間(まーちゅう)が目視レビューした後に行うこと。Skillが「これで完成」と断定する出力をしてはいけない
-- Import操作(Current/Waitingいずれの場合も)は必ずユーザー本人が内容を確認した上で手動で行う。無人での自動アップロードはしない(詳細は references/contribution-workflow.md)
+- Import操作は必ずユーザー本人が内容を確認した上で手動で行う。無人での自動アップロードはしない(詳細は references/contribution-workflow.md)
