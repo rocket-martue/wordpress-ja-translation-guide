@@ -18,13 +18,13 @@ ja.wordpress.org 公式の[翻訳ハンドブック](https://ja.wordpress.org/te
 - 公式用語集・Consistency Toolへの参照
 - 用語選択に確信が持てない箇所は `[要確認]` として明示し、断定しない
 - `.po`形式での出力フォーマットを維持
-- **PTE(Project Translation Editor)権限の有無に応じた反映ステータスの案内**(Current即時反映か、Waiting承認待ちか)
+- **一括翻訳ワークフロー**: `scripts/apply_translations.py` によるバッチ書き込みと、`scripts/validate_po.py` による機械チェックを組み合わせた大量翻訳の手順
 
 詳細なルールと例は以下を参照してください:
 
 - [`references/notation-rules.md`](./references/notation-rules.md) — 全角半角・句読点・括弧・カタカナ語の長音記号・日付・プレースホルダー
 - [`references/word-choice-rules.md`](./references/word-choice-rules.md) — 訳語統一・文体ルール・ブランド名・用語集の使い方
-- [`references/contribution-workflow.md`](./references/contribution-workflow.md) — PTE有無で変わる反映ステータス、自動化してよい範囲・してはいけない範囲
+- [`references/contribution-workflow.md`](./references/contribution-workflow.md) — 一括翻訳ワークフローとスクリプトの使い方、自動化してよい範囲・してはいけない範囲
 
 ## 使い方
 
@@ -32,12 +32,13 @@ ja.wordpress.org 公式の[翻訳ハンドブック](https://ja.wordpress.org/te
 
 1. [translate.wordpress.org](https://translate.wordpress.org/) で翻訳対象のプロジェクトを開く
 2. 「Japanese」を選択
-3. Stable または Stable Reademe のいずれかを選択
+3. Stable または Stable Readme のいずれかを選択
 4. Untranslated をクリックして未翻訳のものだけを表示する
 5. ページ最下部までスクロールし、「all current」を「only matching the filter」に変更してから「Export」をクリックして .po ファイルをダウンロードする
 6. ダウンロードした .po ファイルの翻訳をAIに依頼する
 7. 翻訳結果を確認し、必要に応じて修正する
-8. 翻訳後の .po ファイルはtranslate.wordpress.org ページ最下部にある「Import Translations」からアップロードする
+8. `python scripts/validate_po.py path/to/ja.po` で機械的に検出できるルール違反がないかチェックする(詳細は[後述](#翻訳品質チェック-validate_popy))
+9. 翻訳後の .po ファイルは translate.wordpress.org のページ最下部にある「Import Translations」からアップロードする
 
 ### Claude Code / Claude.ai (Desktop, Cowork)
 
@@ -95,7 +96,9 @@ python scripts/validate_po.py --errors-only path/to/ja.po
 | `BRAND_TRANSLITERATION` | ERROR | 「WordPress」の音訳(ワードプレス等) |
 | `FULLWIDTH_DIGIT` | WARN | 全角数字(０-９) |
 | `FULLWIDTH_ALPHA` | WARN | 全角英字(Ａ-Ｚ、ａ-ｚ) |
-| `NUM_SPACING` | WARN | 数字・プレースホルダー直後の不要なスペース |
+| `FULLWIDTH_PUNCT` | WARN | 全角感嘆符・疑問符(!?) |
+| `NUM_SPACING` | WARN | 数字・数値プレースホルダー(`%d`等)直後の不要なスペース |
+| `PUNCT_SPACING` | WARN | 日本語直後の `!` / `?` にスペースがない |
 | `WRITING_CONVENTION` | WARN | 「下さい」「全て」「既に」等の表記ゆれ |
 
 終了コードが `0` なら違反なし。`1` なら1件以上の違反あり(`--errors-only` と組み合わせてCI等に組み込む用途にも使えます)。
