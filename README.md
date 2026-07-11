@@ -56,7 +56,7 @@ ja.wordpress.org 公式の[翻訳ハンドブック](https://ja.wordpress.org/te
 
 ## 開発者向け: .skillファイルの生成方法
 
-`.skill`ファイルはビルド成果物のため、このリポジトリにはコミットされていません(`.gitignore`で除外)。配布用の`.skill`は、リリースを作るたびに以下のスクリプトで手元生成し、[Releases](../../releases)に添付してください。
+`.skill`ファイルはビルド成果物のため、このリポジトリにはコミットされていません(`.gitignore`で除外)。配布用の`.skill`は、`vX.Y.Z` 形式のタグをpushすると GitHub Actions(`.github/workflows/release.yml`)がタグの内容からビルドし、[Releases](../../releases)に自動で添付します。以下のスクリプトは、手元で内容を確認したいときに使ってください。
 
 ### 必要なもの
 
@@ -77,7 +77,7 @@ python scripts/package_skill.py -o dist
 ### スクリプトがやっていること
 
 - `SKILL.md` の存在と、frontmatter(`name` / `description`)が正しく書かれているかを検証
-- `.git` / `scripts` / `dist` / `__pycache__` などビルドに不要なファイルを除外しつつ、リポジトリ全体を `wordpress-ja-translation-guide/` フォルダごとzip化
+- `.git` / `.github` / `dist` / `__pycache__` / `CLAUDE.md` / `package_skill.py` など配布に不要なファイルを除外しつつ、リポジトリ全体を `wordpress-ja-translation-guide/` フォルダごとzip化(`scripts/` 内の `apply_translations.py` と `validate_po.py` はSKILL.mdが参照するランタイムツールのため同梱)
 
 ### 翻訳品質チェック: validate_po.py
 

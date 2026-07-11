@@ -1,0 +1,6 @@
+# GitHub の Source code (zip/tar.gz) 自動生成アーカイブ(git archive)から除外するファイル。
+# CLAUDE.md は開発用の指示ファイルであり、配布物には含めない方針(CLAUDE.md 参照)。
+CLAUDE.md      export-ignore
+.gitattributes export-ignore
+.gitignore     export-ignore
+.github        export-ignore

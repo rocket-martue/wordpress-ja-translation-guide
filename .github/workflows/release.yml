@@ -1,0 +1,33 @@
+name: Release
+
+# vX.Y.Z 形式のタグを push すると、そのタグの内容から .skill をビルドして
+# GitHub Release を自動作成・添付する。
+# ローカルの作業ツリーからビルドした成果物とタグの内容がズレる事故を防ぐため、
+# リリース用の .skill は必ずこのワークフローで生成する。
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build .skill
+        run: python3 scripts/package_skill.py
+
+      - name: Create GitHub Release and attach .skill
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Release が手動で先に作られていた場合は添付だけ行う
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/wordpress-ja-translation-guide.skill \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes \
+          || gh release upload "${GITHUB_REF_NAME}" dist/wordpress-ja-translation-guide.skill --clobber
