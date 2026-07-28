@@ -653,16 +653,19 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         return cmd_list(po_path, args.start, args.count)
 
+    # --start / --count は --list 専用。TRANSLATIONS の有無より先に弾かないと、
+    # `ja.po --start 20` に対して「TRANSLATIONS を指定してください」という
+    # 見当違いの案内が出てしまう
+    if args.start != 0 or args.count is not None:
+        print("[ERROR] --start / --count は --list と一緒に指定してください", file=sys.stderr)
+        return 2
+
     if args.translations is None:
         print(
             "[ERROR] TRANSLATIONS を指定してください"
             "(未翻訳エントリーの一覧表示は --list)",
             file=sys.stderr,
         )
-        return 2
-
-    if args.start != 0 or args.count is not None:
-        print("[ERROR] --start / --count は --list と一緒に指定してください", file=sys.stderr)
         return 2
 
     return cmd_apply(po_path, args.translations)

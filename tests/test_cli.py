@@ -158,6 +158,19 @@ class ApplyTranslationsArgsTest(unittest.TestCase):
         self.assertEqual(r.returncode, 2)
         self.assertIn("--list と一緒に指定してください", r.stderr)
 
+    def test_start_or_count_alone_reports_list_error(self):
+        """TRANSLATIONS も無い場合、TRANSLATIONS 不足ではなく --list 側を案内する。
+
+        `ja.po --start 20` と打つ人は一覧表示を意図しているため、
+        「TRANSLATIONS を指定してください」では誤誘導になる。
+        """
+        for args in (["--start", "20"], ["--count", "5"]):
+            with self.subTest(args=args):
+                r = run_script(APPLY, str(self.po), *args)
+                self.assertEqual(r.returncode, 2)
+                self.assertIn("--list と一緒に指定してください", r.stderr)
+                self.assertNotIn("TRANSLATIONS を指定してください", r.stderr)
+
     def test_non_integer_start_is_error(self):
         r = run_script(APPLY, str(self.po), "--list", "--start", "abc")
         self.assertEqual(r.returncode, 2)
