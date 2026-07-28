@@ -27,6 +27,8 @@ WordPress 日本語翻訳スタイルガイドに基づいて、機械的に検�
   FULLWIDTH_PUNCT       全角感嘆符・疑問符 (！？) [WARN]
   NUM_SPACING           数字・数値プレースホルダー(%d等)直後の不要なスペース [WARN]
                         (文字列プレースホルダー %s は対象外。公式例では前後にスペースを入れる)
+  ALPHA_SPACING         半角英字と全角文字の間に必要な半角スペースがない [WARN]
+                        (例: 「担当者のFacebook」→「担当者の Facebook」)
   PUNCT_SPACING         日本語直後の ! / ? にスペースがない [WARN]
   WRITING_CONVENTION    「ください」「すべて」「すでに」等の表記 [WARN]
 """
@@ -480,6 +482,97 @@ def check_number_spacing(entry: PoEntry, filepath: Path) -> list[Violation]:
     return violations
 
 
+# ---------------------------------------------------------------------------
+# ALPHA_SPACING: 半角英字と全角文字の間の必須スペース (notation-rules.md 1-4)
+#
+# 公式スタイルガイド 1-4「数字を除く半角文字と全角文字の間には、半角文字1字分の
+# スペースを入れる」に対応する。fix_spacing.py もここの
+# find_alpha_fw_boundaries() を import して使う(検出ロジックを二重に持たない)。
+# ---------------------------------------------------------------------------
+
+# 全角文字クラス: 々〆〇・ひらがな・カタカナ(長音記号「ー」を含む)・漢字。
+# 「」『』。、・ などの全角約物は 1-4 の例外(前後にスペースを入れない)なので
+# 含めない。除外しておくことで例外規定を特別扱いせずに済む。
+# カタカナ範囲を 30A0-30FA と 30FC-30FF に分けているのは、全角中点
+# 「・」(U+30FB)を意図的に外すため。
+_FW_CHAR_RE = re.compile(
+    r'[々-〇ぁ-ゟ゠-ヺー-ヿ㐀-䶿一-鿿]'
+)
+
+# 判定から除外(マスク)する部分。この順に適用する。
+_MASK_RES: list[re.Pattern] = [
+    # .po のエスケープシーケンス。"...です\nAPI..." の n が全角文字と
+    # 隣接して誤検出されるのを防ぐ(fix_spacing.py は生の行を扱うため必須)
+    re.compile(r'\\.', re.DOTALL),
+    # HTMLタグ
+    re.compile(r'<[^<>]*>'),
+    # HTMLエンティティ (&nbsp; &#8217; &#x2019; など)
+    re.compile(r'&[A-Za-z][A-Za-z0-9]{0,31};|&#[0-9]{1,7};|&#x[0-9A-Fa-f]{1,6};'),
+    # プレースホルダー。マスクしないと「%d件」の d が「件」と隣接して
+    # 誤検出され、NUM_SPACING(数値直後はスペース不要)と矛盾する
+    re.compile(r'%%|%(?:\d+\$)?[-+ 0]*\d*(?:\.\d+)?[sdifu]'),
+]
+
+_MASK_CHAR = '\x00'
+
+
+def _mask_ignored(s: str) -> str:
+    """判定対象外の部分を同じ長さの制御文字で潰す(オフセットは保つ)。"""
+    masked = s
+    for pattern in _MASK_RES:
+        masked = pattern.sub(lambda m: _MASK_CHAR * len(m.group()), masked)
+    return masked
+
+
+def _is_ascii_alpha(ch: str) -> bool:
+    return ch.isascii() and ch.isalpha()
+
+
+def find_alpha_fw_boundaries(s: str) -> list[int]:
+    """
+    半角英字と全角文字が直接隣接している位置(= 半角スペースを挿入すべき
+    オフセット)のリストを返す。
+
+    - 半角数字は対象外(1-9 の「数字の前後にスペースを入れない」が適用される)
+    - HTMLタグ・HTMLエンティティ・プレースホルダー・エスケープシーケンスは対象外
+    - 全角約物(「」『』。、・)は _FW_CHAR_RE に含めていないため自動的に対象外
+    """
+    masked = _mask_ignored(s)
+    positions: list[int] = []
+    for i in range(len(masked) - 1):
+        a, b = masked[i], masked[i + 1]
+        if (_is_ascii_alpha(a) and _FW_CHAR_RE.match(b)) or \
+           (_FW_CHAR_RE.match(a) and _is_ascii_alpha(b)):
+            positions.append(i + 1)
+    return positions
+
+
+def check_alpha_spacing(entry: PoEntry, filepath: Path) -> list[Violation]:
+    """ALPHA_SPACING: 半角英字と全角文字の間に半角スペースがあるか (1-4)。"""
+    violations: list[Violation] = []
+
+    for msgstr in _all_msgstrs(entry):
+        positions = find_alpha_fw_boundaries(msgstr)
+        if not positions:
+            continue
+
+        pos = positions[0]
+        snippet = msgstr[max(0, pos - 5):pos + 5]
+        more = f"(他 {len(positions) - 1} 箇所)" if len(positions) > 1 else ""
+        violations.append(Violation(
+            filepath=filepath,
+            entry=entry,
+            rule_id="ALPHA_SPACING",
+            severity="WARN",
+            message=(
+                f"半角英字と全角文字の間に半角スペースが必要です: 「...{snippet}...」{more}\n"
+                f"  msgstr: \"{msgstr[:80]}\""
+            ),
+        ))
+
+    return violations
+
+
 # 日本語直後の ! / ? にスペースがないパターン
 # 例: 「〜ですか?」→「〜ですか ?」
 _PUNCT_NOSPACE_RE = re.compile(r'(' + _JA + r')([!?])')
@@ -546,6 +639,7 @@ _CHECKS = [
     check_brand_names,
     check_fullwidth,
     check_number_spacing,
+    check_alpha_spacing,
     check_punct_spacing,
     check_writing_conventions,
 ]
