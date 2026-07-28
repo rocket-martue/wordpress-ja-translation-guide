@@ -147,8 +147,12 @@ def strip_volatile(block: str) -> str:
 
 def extract_block(text: str) -> str | None:
     start = text.find(BEGIN_MARKER)
-    end = text.find(END_MARKER)
-    if start == -1 or end == -1 or end < start:
+    if start == -1:
+        return None
+    # 手書き部分に END_MARKER と同じ文字列があっても拾わないよう、
+    # 開始マーカーより後ろから終了マーカーを探す
+    end = text.find(END_MARKER, start + len(BEGIN_MARKER))
+    if end == -1:
         return None
     return text[start:end + len(END_MARKER)]
 
@@ -173,7 +177,8 @@ def update_file(output_path: Path, block: str, check_only: bool) -> bool:
         return False
 
     if not check_only:
-        output_path.write_text(text.replace(current, block), encoding="utf-8")
+        # 置換は1回だけ(同じ内容がファイル内に複数あっても巻き込まない)
+        output_path.write_text(text.replace(current, block, 1), encoding="utf-8")
     return True
 
 

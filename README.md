@@ -15,7 +15,7 @@ ja.wordpress.org 公式の[翻訳ハンドブック](https://ja.wordpress.org/te
 - 受動態を避ける、"View XX"→「〜を表示」など訳語統一ルール
 - プレースホルダー(`%s` `%d` `%1$s` など)の数・種類を原文と完全一致させる
 - テーマ名・プラグイン名・「WordPress」表記・確定済みの機能名は翻訳しない
-- 公式用語集(278エントリー)の収録と、Consistency Toolへの参照
+- 公式用語集の全エントリー(取得日時点のスナップショット)の収録と、Consistency Toolへの参照
 - 用語選択に確信が持てない箇所は `[要確認]` として明示し、断定しない
 - `.po`形式での出力フォーマットを維持
 - **一括翻訳ワークフロー**: `scripts/apply_translations.py` によるバッチ書き込みと、`scripts/validate_po.py` による機械チェックを組み合わせた大量翻訳の手順
@@ -24,7 +24,7 @@ ja.wordpress.org 公式の[翻訳ハンドブック](https://ja.wordpress.org/te
 
 - [`references/notation-rules.md`](./references/notation-rules.md) — 全角半角・句読点・括弧・カタカナ語の長音記号・日付・プレースホルダー
 - [`references/word-choice-rules.md`](./references/word-choice-rules.md) — 訳語統一・文体ルール・ブランド名・用語集の使い方
-- [`references/glossary.md`](./references/glossary.md) — [公式用語集](https://translate.wordpress.org/locale/ja/default/glossary/)全278エントリーのスナップショット(英語・品詞・日本語訳・補足)
+- [`references/glossary.md`](./references/glossary.md) — [公式用語集](https://translate.wordpress.org/locale/ja/default/glossary/)全エントリーのスナップショット(英語・品詞・日本語訳・補足。取得日と収録件数はファイル冒頭に記載)
 - [`references/contribution-workflow.md`](./references/contribution-workflow.md) — 一括翻訳ワークフローとスクリプトの使い方、自動化してよい範囲・してはいけない範囲
 
 ## 使い方
