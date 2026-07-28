@@ -4,7 +4,7 @@
 
 ## 目次
 
-- 1. 翻訳作業の共通フロー / 1.1. apply_translations.py の使い方 / 1.2. validate_po.py の使い方
+- 1. 翻訳作業の共通フロー / 1.1. apply_translations.py の使い方 / 1.2. validate_po.py の使い方 / 1.3. fix_spacing.py の使い方
 - 2. 自動化してよい範囲 / してはいけない範囲
 
 ## 1. 翻訳作業の共通フロー
@@ -108,10 +108,38 @@ python /path/to/wordpress-ja-translation-guide/scripts/validate_po.py path/to/ja
 | `FULLWIDTH_ALPHA` | WARN | 全角英字(Ａ-Ｚ、ａ-ｚ) |
 | `FULLWIDTH_PUNCT` | WARN | 全角感嘆符・疑問符(！？) |
 | `NUM_SPACING` | WARN | 数字・数値プレースホルダー(`%d`等)直後の不要なスペース(`%s`は対象外、notation-rules.md 6-1参照) |
+| `ALPHA_SPACING` | WARN | 半角英字と全角文字の間に半角スペースがない(例: `担当者のFacebook`。notation-rules.md 1-4参照) |
 | `PUNCT_SPACING` | WARN | 日本語直後の ! / ? の前にスペースがない |
 | `WRITING_CONVENTION` | WARN | 「下さい」「全て」「既に」等の表記ゆれ |
 
 ERROR が残った状態での Import は行わない。WARN は目視判断のうえ修正する。
+
+### 1.3. fix_spacing.py の使い方
+
+`ALPHA_SPACING`(半角英字と全角文字の間の必須スペース)は数が多くなりやすいため、機械挿入するスクリプトを用意している。`validate_po.py` と同じ検出ロジックを使う。
+
+```bash
+# dry-run(既定): 挿入候補を表示するだけでファイルは変更しない
+python ~/.claude/skills/wordpress-ja-translation-guide/scripts/fix_spacing.py path/to/ja.po
+
+# 実際に書き換える
+python ~/.claude/skills/wordpress-ja-translation-guide/scripts/fix_spacing.py path/to/ja.po --apply
+```
+
+出力例:
+
+```
+path/to/ja.po:17  (5 箇所)
+  - 拡張機能のAPIキーを取得するためには、MainWPのAPIキーが必要です。
+  + 拡張機能の API キーを取得するためには、MainWP の API キーが必要です。
+```
+
+運用手順は **dry-run → 差分を目視 → `--apply` → `validate_po.py` で再検証 → 人間レビュー**。いきなり `--apply` しない。
+
+- 挿入するのは半角スペースだけで、訳語・文体の正しさは一切保証しない(適用後の人間レビューを省略しない)
+- `msgid` / コメント / obsolete(`#~`)/ ヘッダーエントリー(`Last-Translator` など)には触れない
+- 書き換え後に「スペース以外の内容が不変」「プレースホルダーの数・種類が不変」「HTMLタグ数が不変」を検証し、1つでも破れた箇所は書き換えずに `[ERROR]` 報告する
+- 終了コード: 0 = 対象なし / 1 = 対象あり(dry-run)・書き換え実施(`--apply`)/ 2 = エラー
 
 ## 2. 自動化してよい範囲 / してはいけない範囲
 
