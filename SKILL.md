@@ -77,7 +77,7 @@ WordPressプロジェクトが掲げる3つの執筆・翻訳指針:
 - 同じ原語に複数の訳語があるものは、用語集の「補足」列の文脈で選ぶ(例: `default` = 初期設定/初期値/デフォルト、`term` = キーワード/ターム)。文脈から決められない場合は `[要確認]` とする
 - 用語集は更新され続けるため、`references/glossary.md` と[公式用語集](https://translate.wordpress.org/locale/ja/default/glossary)が食い違う場合は**公式ページが正しい**
 - 既存の承認済み訳との表記ゆれは [Consistency Tool](https://translate.wordpress.org/consistency) で確認できる。同じ原文がプロジェクト間でどう訳されているか調べられる
-- 複数の訳語候補があり判断がつかない場合や、既存訳が誤っていると思われる場合は、訳文を確定させず `[要確認: WordSlack #translate で要相談]` と明記する
+- 複数の訳語候補があり判断がつかない場合や、既存訳が誤っていると思われる場合は、訳文を確定させず `[要確認: Making WordPress の #ja-docs で要相談]` と明記する
 
 ## 出力フォーマット
 

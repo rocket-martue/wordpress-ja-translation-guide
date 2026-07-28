@@ -2,7 +2,7 @@
 
 出典: [translate.wordpress.org の日本語ロケール用語集](https://translate.wordpress.org/locale/ja/default/glossary/)(WordPress 日本語ローカライズチームが管理)。下の表はその全エントリーを取得日時点でそのまま転記したもので、訳語・補足の文言はこちらで足したり言い換えたりしていない。
 
-**原文ママで転記しているため、公式用語集側の誤字もそのまま含まれる**(例: `chracteter code` = character code)。原語で見つからないときは綴り違いも試す。誤字を見つけたら、このファイルを直すのではなく[公式用語集](https://translate.wordpress.org/locale/ja/default/glossary/)側の修正を WordSlack の #translate チャンネルで提案する(このファイルの表は自動生成のため、手で直しても次回の更新で元に戻る)。
+**原文ママで転記しているため、公式用語集側の誤字もそのまま含まれる**。原語で見つからないときは綴り違いも試す。誤字を見つけたら、このファイルを直すのではなく[公式用語集](https://translate.wordpress.org/locale/ja/default/glossary/)側の修正を Making WordPress の #ja-docs チャンネルで提案する(このファイルの表は自動生成のため、手で直しても次回の更新で元に戻る)。
 
 ## 目次
 
@@ -83,10 +83,10 @@
 | cart | noun | カート |  |
 | category | noun | カテゴリー | 例外で長音付き |
 | CDN | noun | CDN | Content Delivery Network の略語 |
+| character code | noun | 文字コード |  |
 | character entity reference | noun | 文字実体参照 |  |
 | character set | noun | 文字セット |  |
 | checkout | noun | 購入手続き | eコマースサイトでお買い物カゴに入っている商品を実際に購入する操作。 |
-| chracteter code | noun | 文字コード |  |
 | citation | noun | 引用元 | blockquote 要素の属性 |
 | Classic | adjective | クラシック | Gutenberg のブロックタイプ |
 | Classic Editor | noun | Classic Editor | プラグイン名 |
@@ -292,7 +292,7 @@
 | text block | noun | テキストブロック | Gutenberg のブロックタイプ |
 | text editor | noun | テキストエディター |  |
 | theme | noun | テーマ |  |
-| thought | noun | フィードバック | "%1$s thought on “%2$s”" などの場合、コメントだけではなくピンバックを含むこともあるので「コメント」とは訳さない。Consistensy Tool に同じフレーズが存在する可能性があります。 |
+| thought | noun | フィードバック | "%1$s thought on “%2$s”" などの場合、コメントだけではなくピンバックを含むこともあるので「コメント」とは訳さない。Consistency Tool に同じフレーズが存在する可能性があります。 |
 | Toolbar | noun | ツールバー |  |
 | trackback | noun | トラックバック |  |
 | Transient | noun | Transient |  |
