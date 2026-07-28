@@ -24,8 +24,10 @@ SKILL_DIR = Path(__file__).resolve().parent.parent
 # .skill に含めないディレクトリ・ファイル
 # 注: scripts/ ディレクトリ自体は同梱する(apply_translations.py と validate_po.py は
 # SKILL.md が参照するランタイムツールのため)。翻訳作業では使わないメンテナンス用の
-# package_skill.py と update_glossary.py のみ除外する
-EXCLUDE_DIR_NAMES = {".git", ".github", ".claude", "__pycache__", "node_modules", "dist", "evals"}
+# package_skill.py と update_glossary.py、および開発用の tests/ は除外する
+EXCLUDE_DIR_NAMES = {
+    ".git", ".github", ".claude", "__pycache__", "node_modules", "dist", "evals", "tests",
+}
 EXCLUDE_FILE_NAMES = {
     ".DS_Store",
     ".gitignore",
