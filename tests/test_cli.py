@@ -171,6 +171,22 @@ class ApplyTranslationsArgsTest(unittest.TestCase):
                 self.assertIn("--list と一緒に指定してください", r.stderr)
                 self.assertNotIn("TRANSLATIONS を指定してください", r.stderr)
 
+    def test_start_zero_without_list_is_error(self):
+        """`--start 0` は既定値と同じ値だが、--list なしなら弾く。
+
+        default=0 のままだと明示指定と未指定を区別できず、`--start 1` は
+        エラーになるのに `--start 0` は素通りする、という不整合になる。
+        """
+        r = run_script(APPLY, str(self.po), "translations.json", "--start", "0")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("--list と一緒に指定してください", r.stderr)
+
+    def test_list_with_explicit_start_zero(self):
+        """--list 側では `--start 0` が従来どおり通ること(上の修正の巻き添え防止)。"""
+        r = run_script(APPLY, str(self.po), "--list", "--start", "0")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("Save changes", r.stdout)
+
     def test_non_integer_start_is_error(self):
         r = run_script(APPLY, str(self.po), "--list", "--start", "abc")
         self.assertEqual(r.returncode, 2)

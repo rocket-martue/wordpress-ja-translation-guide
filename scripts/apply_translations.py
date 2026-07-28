@@ -624,8 +624,10 @@ def main(argv: list[str] | None = None) -> int:
         dest="list_mode",
         help="未翻訳エントリーを一覧表示する",
     )
+    # default は None(未指定)。0 を既定値にすると `--start 0` の明示指定と
+    # 区別できず、--list なしの `--start 0` を弾けなくなる
     parser.add_argument(
-        "--start", type=_int_arg, default=0, metavar="N",
+        "--start", type=_int_arg, default=None, metavar="N",
         help="表示開始インデックス(--list 用。デフォルト: 0)",
     )
     parser.add_argument(
@@ -651,21 +653,17 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 2
-        return cmd_list(po_path, args.start, args.count)
+        return cmd_list(po_path, args.start if args.start is not None else 0, args.count)
 
     # --start / --count は --list 専用。TRANSLATIONS の有無より先に弾かないと、
     # `ja.po --start 20` に対して「TRANSLATIONS を指定してください」という
     # 見当違いの案内が出てしまう
-    if args.start != 0 or args.count is not None:
+    if args.start is not None or args.count is not None:
         print("[ERROR] --start / --count は --list と一緒に指定してください", file=sys.stderr)
         return 2
 
     if args.translations is None:
-        print(
-            "[ERROR] TRANSLATIONS を指定してください"
-            "(未翻訳エントリーの一覧表示は --list)",
-            file=sys.stderr,
-        )
+        print("[ERROR] TRANSLATIONS を指定してください(未翻訳エントリーの一覧表示は --list)", file=sys.stderr)
         return 2
 
     return cmd_apply(po_path, args.translations)
