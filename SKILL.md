@@ -68,12 +68,14 @@ WordPressプロジェクトが掲げる3つの執筆・翻訳指針:
 
 - **WordPress**: 常に「WordPress」と表記し、翻訳・音訳しない
 - **テーマ名・プラグイン名**: 例えば"Twenty Twenty"のようなテーマ名は翻訳しない。プラグイン名も同様
-- **機能名**: [公式用語集](https://translate.wordpress.org/locale/ja/default/glossary)に従う。新しい用語は独自に確定させず`[要確認]`とする
+- **機能名**: 用語集(`references/glossary.md`、原典は[公式用語集](https://translate.wordpress.org/locale/ja/default/glossary))に従う。`Gutenberg` `BuddyPress` `Press This` `Transient` `nonce` `Cookie` `WordCamp` など、用語集で英語のままと決まっているものは翻訳しない。用語集に無い新しい用語は独自に確定させず`[要確認]`とする
 - ショートコードタグ、HTMLタグ、変数名、関数名
 
 ## 用語集・表記ゆれチェックツールの活用
 
-- 訳語選択に迷ったら、まず[公式用語集](https://translate.wordpress.org/locale/ja/default/glossary)を確認する(このSkillは用語集を全件収録していない)
+- 訳語選択に迷ったら、まず `references/glossary.md`(公式用語集の全エントリーを収録したスナップショット)を原語で検索する。**用語集にある語は用語集の訳語に合わせる**
+- 同じ原語に複数の訳語があるものは、用語集の「補足」列の文脈で選ぶ(例: `default` = 初期設定/初期値/デフォルト、`term` = キーワード/ターム)。文脈から決められない場合は `[要確認]` とする
+- 用語集は更新され続けるため、`references/glossary.md` と[公式用語集](https://translate.wordpress.org/locale/ja/default/glossary)が食い違う場合は**公式ページが正しい**
 - 既存の承認済み訳との表記ゆれは [Consistency Tool](https://translate.wordpress.org/consistency) で確認できる。同じ原文がプロジェクト間でどう訳されているか調べられる
 - 複数の訳語候補があり判断がつかない場合や、既存訳が誤っていると思われる場合は、訳文を確定させず `[要確認: WordSlack #translate で要相談]` と明記する
 
@@ -125,11 +127,12 @@ msgstr "訳文の文字列"
 - [ ] 括弧・カギ括弧の使い方が規約通りか
 - [ ] 受動態を避け、能動態・統一された語尾になっているか
 - [ ] 「ください」「すべて」「すでに」など指定の表記を使っているか
+- [ ] 用語集(`references/glossary.md`)に載っている語は、用語集どおりの訳語を使っているか
 - [ ] 既存の承認済み訳と表記が揺れていないか(Consistency Toolで確認推奨)
 - [ ] 用語選択に確信が持てない箇所は `[要確認]` と明記したか
 
 ## 重要な注意
 
-- このSkillはja.wordpress.org公式の用語集(glossary)を全件収録していない。判断に迷う訳語は確定させず、`[要確認]`として明示すること
+- `references/glossary.md` に収録している公式用語集は**取得日時点のスナップショット**であり、最新とは限らない。用語集は更新され続けるため、公式ページと食い違う可能性がある。用語集に載っていない語や、複数の訳語があって文脈から決められない語は確定させず、`[要確認]`として明示すること
 - このSkillが生成した訳文は**ドラフトであり最終版ではない**。`translate.wordpress.org`への反映(提案・インポートいずれも)は、必ず人間が目視レビューした後に行うこと。Skillが「これで完成」と断定する出力をしてはいけない
 - Import操作は必ずユーザー本人が内容を確認した上で手動で行う。無人での自動アップロードはしない(詳細は references/contribution-workflow.md)

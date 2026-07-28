@@ -22,14 +22,22 @@ wordpress-ja-translation-guide/
 │       └── release.yml                タグpush時に.skillをビルドしReleaseへ自動添付
 ├── scripts/
 │   ├── package_skill.py               .skill生成スクリプト(標準ライブラリのみ。.skillには同梱しない)
+│   ├── update_glossary.py             公式用語集を取得しglossary.mdを更新(.skillには同梱しない)
 │   ├── apply_translations.py          翻訳結果を.poへ反映するランタイムツール(.skillに同梱)
 │   ├── validate_po.py                 .poの規約違反チェックツール(.skillに同梱)
 │   └── fix_spacing.py                 半角英字と全角文字の間のスペースを機械挿入(.skillに同梱)
 └── references/
     ├── notation-rules.md              全角半角・句読点・括弧・カギ括弧・カタカナ語・日付・プレースホルダー
     ├── word-choice-rules.md           訳語統一・文体・ブランド名・用語集の使い方
+    ├── glossary.md                    公式用語集のスナップショット(表部分はupdate_glossary.pyが自動生成)
     └── contribution-workflow.md       一括翻訳ワークフローとスクリプトの使い方
 ```
+
+## 用語集(references/glossary.md)の扱い
+
+- `<!-- glossary:begin -->` 〜 `<!-- glossary:end -->` の**内側は自動生成**。手で書き換えず、`python scripts/update_glossary.py` で再生成する。マーカーの外側(前書き・使い方・「特に間違いやすい項目」)は手書きなので、スクリプトを実行しても消えない
+- 表の内容は公式用語集の**転記のみ**。訳語や補足をこちらの判断で言い換えたり、独自のエントリーを足したりしない
+- 用語集は不定期に更新される。リリース前に `python scripts/update_glossary.py --check` で差分の有無を確認する。リリースワークフローからは自動実行しない(タグを打った時点で外部サイトの内容が黙って配布物に混入するのを避けるため)
 
 ## 編集時の方針
 
