@@ -183,6 +183,18 @@ def update_file(output_path: Path, block: str, check_only: bool) -> bool:
     return True
 
 
+def update_command(args: argparse.Namespace) -> str:
+    """--check で差分が出たときに案内する、同じ条件で更新するためのコマンド。"""
+    parts = ["python scripts/update_glossary.py"]
+    if args.output != DEFAULT_OUTPUT:
+        parts.append(f"--output {args.output}")
+    if args.url != GLOSSARY_URL:
+        parts.append(f"--url {args.url}")
+    if args.from_file:
+        parts.append(f"--from-file {args.from_file}")
+    return " ".join(parts)
+
+
 def main(argv: list[str] | None = None) -> int:
     if sys.platform == "win32":
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -236,7 +248,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"✅ 変更はありません: {output_path}")
         return 0
     if args.check:
-        print(f"❌ {output_path} が最新ではありません。`python scripts/update_glossary.py` を実行してください")
+        print(f"❌ {output_path} が最新ではありません。`{update_command(args)}` を実行してください")
         return 1
     print(f"✅ 更新しました: {output_path}")
     return 0
