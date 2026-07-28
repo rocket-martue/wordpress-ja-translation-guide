@@ -177,6 +177,7 @@ def update_file(output_path: Path, block: str, check_only: bool) -> bool:
         return False
 
     if not check_only:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         # 置換は1回だけ(同じ内容がファイル内に複数あっても巻き込まない)
         output_path.write_text(text.replace(current, block, 1), encoding="utf-8")
     return True
