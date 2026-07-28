@@ -2,6 +2,8 @@
 
 出典: [translate.wordpress.org の日本語ロケール用語集](https://translate.wordpress.org/locale/ja/default/glossary/)(WordPress 日本語ローカライズチームが管理)。下の表はその全エントリーを取得日時点でそのまま転記したもので、訳語・補足の文言はこちらで足したり言い換えたりしていない。
 
+**原文ママで転記しているため、公式用語集側の誤字もそのまま含まれる**(例: `chracteter code` = character code)。原語で見つからないときは綴り違いも試す。誤字を見つけたら、このファイルを直すのではなく[公式用語集](https://translate.wordpress.org/locale/ja/default/glossary/)側の修正を WordSlack の #translate チャンネルで提案する(このファイルの表は自動生成のため、手で直しても次回の更新で元に戻る)。
+
 ## 目次
 
 - 1. 使い方
