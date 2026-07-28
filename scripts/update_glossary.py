@@ -19,6 +19,7 @@ import argparse
 import datetime
 import html
 import re
+import shlex
 import sys
 import urllib.request
 from html.parser import HTMLParser
@@ -184,15 +185,18 @@ def update_file(output_path: Path, block: str, check_only: bool) -> bool:
 
 
 def update_command(args: argparse.Namespace) -> str:
-    """--check で差分が出たときに案内する、同じ条件で更新するためのコマンド。"""
-    parts = ["python scripts/update_glossary.py"]
+    """--check で差分が出たときに案内する、同じ条件で更新するためのコマンド。
+
+    パスにスペースが含まれていてもそのまま実行できるよう、shlex でクォートする。
+    """
+    parts = ["python", "scripts/update_glossary.py"]
     if args.output != DEFAULT_OUTPUT:
-        parts.append(f"--output {args.output}")
+        parts += ["--output", args.output]
     if args.url != GLOSSARY_URL:
-        parts.append(f"--url {args.url}")
+        parts += ["--url", args.url]
     if args.from_file:
-        parts.append(f"--from-file {args.from_file}")
-    return " ".join(parts)
+        parts += ["--from-file", args.from_file]
+    return shlex.join(parts)
 
 
 def main(argv: list[str] | None = None) -> int:
