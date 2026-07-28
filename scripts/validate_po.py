@@ -246,10 +246,12 @@ _PH_NUM_CAPTURE_RE = re.compile(r'%(\d+)\$')
 _PH_STRIP_NUM_RE   = re.compile(r'\d+\$')   # %1$02d → %02d
 
 
-def _extract_placeholders(s: str) -> list[str]:
+def extract_placeholders(s: str) -> list[str]:
     """
     文字列からプレースホルダーを抽出する。%% は除外。
     ソート済みリストを返す(順序入れ替えを許容するため)。
+
+    fix_spacing.py と共有する公開関数(シグネチャを変えないこと)。
     """
     return sorted(m for m in _PH_RE.findall(s) if m)
 
@@ -314,11 +316,11 @@ def check_placeholders(entry: PoEntry, filepath: Path) -> list[Violation]:
     if entry.msgstr_plural:
         # 複数形: msgstr[N] と msgid_plural (なければ msgid) を比較
         base = entry.msgid_plural or entry.msgid
-        expected = _extract_placeholders(base)
+        expected = extract_placeholders(base)
         for idx, msgstr in enumerate(entry.msgstr_plural):
             if not msgstr:
                 continue
-            actual = _extract_placeholders(msgstr)
+            actual = extract_placeholders(msgstr)
             if not _placeholders_compat(expected, actual):
                 violations.append(Violation(
                     filepath=filepath,
@@ -332,8 +334,8 @@ def check_placeholders(entry: PoEntry, filepath: Path) -> list[Violation]:
                     ),
                 ))
     elif entry.msgstr:
-        expected = _extract_placeholders(entry.msgid)
-        actual = _extract_placeholders(entry.msgstr)
+        expected = extract_placeholders(entry.msgid)
+        actual = extract_placeholders(entry.msgstr)
         if not _placeholders_compat(expected, actual):
             violations.append(Violation(
                 filepath=filepath,
@@ -531,7 +533,8 @@ def _is_ascii_alpha(ch: str) -> bool:
 def find_alpha_fw_boundaries(s: str) -> list[int]:
     """
     半角英字と全角文字が直接隣接している位置(= 半角スペースを挿入すべき
-    オフセット)のリストを返す。
+    オフセット)のリストを返す。fix_spacing.py と共有する公開関数
+    (シグネチャを変えないこと)。
 
     - 半角数字は対象外(1-9 の「数字の前後にスペースを入れない」が適用される)
     - HTMLタグ・HTMLエンティティ・プレースホルダー・エスケープシーケンスは対象外
@@ -671,10 +674,12 @@ def validate_file(filepath: Path) -> tuple[list[PoEntry], list[Violation]]:
 # メイン
 # ---------------------------------------------------------------------------
 
-def _resolve_paths(patterns: list[str]) -> list[Path]:
+def resolve_paths(patterns: list[str]) -> list[Path]:
     """
     ファイルパスまたは glob パターンのリストを実際の Path のリストに展開する。
     Windows でシェルが glob を展開しない場合にも対応。
+
+    fix_spacing.py と共有する公開関数(シグネチャを変えないこと)。
     """
     paths: list[Path] = []
     for pattern in patterns:
@@ -713,7 +718,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    paths = _resolve_paths(args.files)
+    paths = resolve_paths(args.files)
     if not paths:
         return 2
 

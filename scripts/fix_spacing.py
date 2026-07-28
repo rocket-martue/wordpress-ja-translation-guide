@@ -45,8 +45,8 @@ from pathlib import Path
 
 # 検出ロジックは validate_po.py と共有する(同じディレクトリに配置されている)
 from validate_po import (  # noqa: E402
-    _extract_placeholders,
-    _resolve_paths,
+    extract_placeholders,
+    resolve_paths,
     find_alpha_fw_boundaries,
 )
 
@@ -182,7 +182,7 @@ def _is_safe(old: str, new: str) -> str | None:
     """
     if new.replace(' ', '') != old.replace(' ', ''):
         return "スペース以外の内容が変化しました"
-    if _extract_placeholders(new) != _extract_placeholders(old):
+    if extract_placeholders(new) != extract_placeholders(old):
         return "プレースホルダーの数・種類が変化しました"
     if len(_TAG_RE.findall(new)) != len(_TAG_RE.findall(old)):
         return "HTMLタグの数が変化しました"
@@ -280,7 +280,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    paths = _resolve_paths(args.files)
+    paths = resolve_paths(args.files)
     if not paths:
         return 2
 
@@ -313,8 +313,15 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if total_fields == 0:
+        if total_unsafe:
+            # 検出はしたが全件が安全チェックで弾かれた状態。成功と誤解させない
+            print(
+                f"⚠️ 挿入できた箇所はありません。"
+                f"{total_unsafe} 件は安全チェックに失敗したためスキップしました(上記 [ERROR] を確認)"
+            )
+            return 2
         print("✅ 挿入すべき箇所はありません")
-        return 2 if total_unsafe else 0
+        return 0
 
     print(f"{'=' * 60}")
     if args.apply:
