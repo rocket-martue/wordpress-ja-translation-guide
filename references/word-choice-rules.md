@@ -17,7 +17,7 @@ ja.wordpress.org 公式[翻訳スタイルガイド](https://ja.wordpress.org/te
 
 既存の訳が存在するフレーズは統一することが望まれる。translate.wordpress.org の翻訳画面で3本線のメニューから「View original in consistency tool」を開くと、同じ原文の承認済み翻訳を一覧表示できる([Consistency Tool](https://translate.wordpress.org/consistency)へのショートカットも利用可能)。
 
-複数の訳語候補があってどれを選んでよいか分からない場合や、既存の訳が間違っていると思われる場合は、[WordSlack](https://ja.wordpress.org/support/article/slack/) の #translate チャンネルで確認する。Skillとして訳文を出す際は、この判断を勝手に行わず `[要確認]` を付けること。
+複数の訳語候補があってどれを選んでよいか分からない場合や、既存の訳が間違っていると思われる場合は、[Making WordPress の #ja-docs チャンネル](https://wordpress.slack.com/archives/C0B9ARKHWAY) で確認する(未参加の場合は [make.wordpress.org/chat](https://make.wordpress.org/chat/) から参加する。日本語コミュニティは2026年6月に無償版Slackから Make WordPress Slack へ[移行済み](https://ja.wordpress.org/team/2026/06/10/7051/))。Skillとして訳文を出す際は、この判断を勝手に行わず `[要確認]` を付けること。
 
 ## 2. 文体の具体ルール
 
@@ -57,7 +57,7 @@ ja.wordpress.org 公式[翻訳スタイルガイド](https://ja.wordpress.org/te
 基本的に用語集(`references/glossary.md`、原典は[公式用語集](https://translate.wordpress.org/locale/ja/default/glossary))に従って一貫した名称を使用する。
 
 - **WordPress**: 常に「WordPress」と表記し、翻訳や音訳はしない
-- **機能名**: 用語集に従う。コア内の新しい用語はWordSlack #translate チャンネルで話し合って確定するものであり、Skillが独自に確定させてはいけない
+- **機能名**: 用語集に従う。コア内の新しい用語は Making WordPress の #ja-docs チャンネルで話し合って確定するものであり、Skillが独自に確定させてはいけない
 - **テーマ名・プラグイン名**: 例えば "Twenty Twenty" などのテーマ名は翻訳しない。プラグイン名も同様に未翻訳のままにする
 - **用語集で英語のままと決まっているもの**: `Gutenberg` `BuddyPress` `Classic Editor`(プラグイン名の場合) `Press This` `Transient` `nonce` `Cookie` `WordCamp` `Subversion` `RSS` `XML-RPC` `After the Deadline` など。カタカナに開かず原語のまま残す(全リストは `references/glossary.md`)
 - **表記が指定されているもの**: `web server` は「Web サーバー」(文頭でなくても W は大文字)、`URI` は「URL」、`Two-Factor Authentication` は「2要素認証」(漢数字にしない)
