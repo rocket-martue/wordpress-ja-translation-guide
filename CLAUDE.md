@@ -23,7 +23,8 @@ wordpress-ja-translation-guide/
 ├── scripts/
 │   ├── package_skill.py               .skill生成スクリプト(標準ライブラリのみ。.skillには同梱しない)
 │   ├── apply_translations.py          翻訳結果を.poへ反映するランタイムツール(.skillに同梱)
-│   └── validate_po.py                 .poの規約違反チェックツール(.skillに同梱)
+│   ├── validate_po.py                 .poの規約違反チェックツール(.skillに同梱)
+│   └── fix_spacing.py                 半角英字と全角文字の間のスペースを機械挿入(.skillに同梱)
 └── references/
     ├── notation-rules.md              全角半角・句読点・括弧・カギ括弧・カタカナ語・日付・プレースホルダー
     ├── word-choice-rules.md           訳語統一・文体・ブランド名・用語集の使い方

@@ -78,7 +78,7 @@ python scripts/package_skill.py -o dist
 ### スクリプトがやっていること
 
 - `SKILL.md` の存在と、frontmatter(`name` / `description`)が正しく書かれているかを検証
-- `.git` / `.github` / `dist` / `__pycache__` / `CLAUDE.md` / `package_skill.py` など配布に不要なファイルを除外しつつ、リポジトリ全体を `wordpress-ja-translation-guide/` フォルダごとzip化(`scripts/` 内の `apply_translations.py` と `validate_po.py` はSKILL.mdが参照するランタイムツールのため同梱)
+- `.git` / `.github` / `dist` / `__pycache__` / `CLAUDE.md` / `package_skill.py` など配布に不要なファイルを除外しつつ、リポジトリ全体を `wordpress-ja-translation-guide/` フォルダごとzip化(`scripts/` 内の `apply_translations.py`・`validate_po.py`・`fix_spacing.py` はSKILL.mdが参照するランタイムツールのため同梱)
 
 ### 翻訳品質チェック: validate_po.py
 
@@ -98,10 +98,28 @@ python scripts/validate_po.py --errors-only path/to/ja.po
 | `FULLWIDTH_ALPHA` | WARN | 全角英字(Ａ-Ｚ、ａ-ｚ) |
 | `FULLWIDTH_PUNCT` | WARN | 全角感嘆符・疑問符(!?) |
 | `NUM_SPACING` | WARN | 数字・数値プレースホルダー(`%d`等)直後の不要なスペース |
+| `ALPHA_SPACING` | WARN | 半角英字と全角文字の間に半角スペースがない(例: `担当者のFacebook`) |
 | `PUNCT_SPACING` | WARN | 日本語直後の `!` / `?` にスペースがない |
 | `WRITING_CONVENTION` | WARN | 「下さい」「全て」「既に」等の表記ゆれ |
 
 終了コードが `0` なら違反なし。`1` なら1件以上の違反あり(`--errors-only` と組み合わせてCI等に組み込む用途にも使えます)。
+
+### スペースの自動挿入: fix_spacing.py
+
+`ALPHA_SPACING` は件数が多くなりやすいため、`validate_po.py` と同じ検出ロジックで半角スペースを機械挿入するスクリプトを用意しています。
+
+```bash
+python scripts/fix_spacing.py path/to/ja.po           # dry-run(既定): 候補を表示するだけ
+python scripts/fix_spacing.py path/to/ja.po --apply   # 実際に書き換える
+```
+
+```
+path/to/ja.po:17  (5 箇所)
+  - 拡張機能のAPIキーを取得するためには、MainWPのAPIキーが必要です。
+  + 拡張機能の API キーを取得するためには、MainWP の API キーが必要です。
+```
+
+挿入するのは半角スペースだけで、訳語・文体の正しさは保証しません。`--apply` の後は必ず `validate_po.py` で再検証し、人間が目視レビューしてください。`msgid`・コメント・obsolete(`#~`)・ヘッダーエントリーには触れず、書き換え後に「スペース以外の内容が不変」「プレースホルダーの数・種類が不変」「HTMLタグ数が不変」を検証します。
 
 ## 貢献
 
