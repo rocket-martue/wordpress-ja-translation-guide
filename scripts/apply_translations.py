@@ -38,8 +38,9 @@
     すべての msgstr[N] 行に同じ訳文が入る(日本語は単数/複数を区別しないため)。
 
 終了コード:
-    0 = 成功(すべて書き込み)
+    0 = 成功(すべて書き込み)。--help / -h によるヘルプ表示も 0
     2 = 引数エラー / ファイルエラー / 一部または全部のエントリーが書き込めず
+        (引数を1つも渡さなかった場合もヘルプを表示して 2)
 
 制限事項:
     - fuzzy エントリーは未翻訳とみなさない
@@ -592,6 +593,14 @@ def _load_translations(arg: str) -> dict[str, tuple[str | None, str]]:
 # メイン
 # ---------------------------------------------------------------------------
 
+def _int_arg(value: str) -> int:
+    """整数オプションのパース(エラーメッセージを日本語に保つ)。"""
+    try:
+        return int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"整数を指定してください: {value}")
+
+
 def main(argv: list[str] | None = None) -> int:
     if sys.platform == 'win32':
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -603,58 +612,60 @@ def main(argv: list[str] | None = None) -> int:
         epilog=__doc__,
     )
     parser.add_argument("po_file", metavar="PO_FILE", help=".po ファイルのパス")
+    parser.add_argument(
+        "translations",
+        metavar="TRANSLATIONS",
+        nargs="?",
+        help="JSON ファイルパスまたはインライン JSON(--list 指定時は不要)",
+    )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        dest="list_mode",
+        help="未翻訳エントリーを一覧表示する",
+    )
+    parser.add_argument(
+        "--start", type=_int_arg, default=0, metavar="N",
+        help="表示開始インデックス(--list 用。デフォルト: 0)",
+    )
+    parser.add_argument(
+        "--count", type=_int_arg, default=None, metavar="N",
+        help="表示件数(--list 用。省略時: すべて)",
+    )
 
-    sub = parser.add_subparsers(dest="command")
-
-    # --list サブコマンド
-    ls = sub.add_parser("--list", help="未翻訳エントリーを一覧表示する")
-    ls.add_argument("--start", type=int, default=0, metavar="N", help="表示開始インデックス(デフォルト: 0)")
-    ls.add_argument("--count", type=int, default=None, metavar="N", help="表示件数(省略時: すべて)")
-
-    # apply サブコマンド(位置引数)
-    ap = sub.add_parser("apply", help="翻訳を書き込む(通常は省略して直接 TRANSLATIONS を渡す)")
-    ap.add_argument("translations", metavar="TRANSLATIONS", help="JSON ファイルパスまたはインライン JSON")
-
-    # argparse のサブコマンドが "--list" に対応しないため手動パース
     args_list = list(argv) if argv is not None else sys.argv[1:]
 
+    # 引数なしは argparse 標準の usage 1行より親切なフルヘルプを出す
     if not args_list:
         parser.print_help()
         return 2
 
-    po_path = Path(args_list[0])
+    # -h / --help はここで表示され SystemExit(0) になる(終了コード 0)
+    args = parser.parse_args(args_list)
+    po_path = Path(args.po_file)
 
-    # --list モード
-    if len(args_list) >= 2 and args_list[1] == '--list':
-        start = 0
-        count = None
-        i = 2
-        while i < len(args_list):
-            if args_list[i] == '--start' and i + 1 < len(args_list):
-                try:
-                    start = int(args_list[i + 1])
-                except ValueError:
-                    print(f"[ERROR] --start の値が無効です: {args_list[i + 1]}", file=sys.stderr)
-                    return 2
-                i += 2
-            elif args_list[i] == '--count' and i + 1 < len(args_list):
-                try:
-                    count = int(args_list[i + 1])
-                except ValueError:
-                    print(f"[ERROR] --count の値が無効です: {args_list[i + 1]}", file=sys.stderr)
-                    return 2
-                i += 2
-            else:
-                print(f"[ERROR] 不明なオプション: {args_list[i]}", file=sys.stderr)
-                return 2
-        return cmd_list(po_path, start, count)
+    if args.list_mode:
+        if args.translations is not None:
+            print(
+                f"[ERROR] --list と TRANSLATIONS は同時に指定できません: {args.translations}",
+                file=sys.stderr,
+            )
+            return 2
+        return cmd_list(po_path, args.start, args.count)
 
-    # apply モード(第2引数が JSON ファイルパスまたはインライン JSON)
-    if len(args_list) == 2:
-        return cmd_apply(po_path, args_list[1])
+    if args.translations is None:
+        print(
+            "[ERROR] TRANSLATIONS を指定してください"
+            "(未翻訳エントリーの一覧表示は --list)",
+            file=sys.stderr,
+        )
+        return 2
 
-    parser.print_help()
-    return 2
+    if args.start != 0 or args.count is not None:
+        print("[ERROR] --start / --count は --list と一緒に指定してください", file=sys.stderr)
+        return 2
+
+    return cmd_apply(po_path, args.translations)
 
 
 if __name__ == '__main__':
