@@ -10,6 +10,7 @@ ja.wordpress.org 公式[翻訳スタイルガイド](https://ja.wordpress.org/te
 - 4. 中点「・」
 - 5. 日付の翻訳
 - 6. プレースホルダー
+- 7. 三点リーダー「…」(公式規定外)
 
 ## 1. 全角・半角・句読点・スペース
 
@@ -175,3 +176,31 @@ WordPressはPHPの[dateフォーマット](https://www.php.net/manual/ja/datetim
 - 1-4 の例「こんにちは、username さん。」はリテラルの半角単語の例で、`%s` もこれと同じ扱いになる。「プレースホルダーだから一律スペースなし」**ではない**(スペースなしが明記されているのは数値系のみ)
 - `%s` が日本語の文字列(投稿タイトルなど)に置き換わることが文脈上明らかな場合のスペースの有無は、公式スタイルガイドに明示の規定がない。同一プロジェクトの既存訳や [Consistency Tool](https://translate.wordpress.org/consistency) に合わせ、判断がつかなければ `[要確認]` とする
 - `scripts/validate_po.py` の `NUM_SPACING` チェックは数値系(`%d` 等)と生の数字のみを対象にしており、`%s` 直後のスペースは違反として扱わない
+
+## 7. 三点リーダー「…」(公式規定外)
+
+> **このセクションの位置づけ**: 公式[翻訳スタイルガイド](https://ja.wordpress.org/team/handbook/translation/translation-style-guide/)には三点リーダーに関する規定が**ない**。以下は Making WordPress Slack [#ja-docs](https://wordpress.slack.com/archives/C0B9ARKHWAY) での日本語翻訳チームの合意(2026年7月)と、下記の WordPress プロジェクト側の決定に基づく。1〜6章の公式ルールとは根拠の強さが異なる点に注意する。
+
+**7-1. 省略記号にはリテラルの三点リーダー「…」(U+2026) を使い、ピリオド3個「...」は使わない**
+
+| OK | NG |
+|---|---|
+| 読み込み中… | 読み込み中...(ピリオド3個) |
+| アップロード中… | アップロード中...(ピリオド3個) |
+
+「…」は 1 文字の特殊文字(U+2026 Horizontal Ellipsis)で、「...」は通常のピリオド(U+002E)を 3 つ並べたもの。見た目が似ているため混在しやすい。
+
+根拠:
+
+- WordPress 本体の翻訳は両者が混在しているが、調査の結果、三点リーダーのほうが使用頻度が高い
+- [`@wordpress/eslint-plugin` の `i18n-ellipsis` ルール](https://github.com/WordPress/gutenberg/blob/trunk/packages/eslint-plugin/docs/rules/i18n-ellipsis.md)がピリオド3個を禁止している。WordPress 開発チームとして三点リーダーの使用を公式に推奨しているということ
+  > Three dots for indicating an ellipsis should be replaced with the UTF-8 character … (Horizontal Ellipsis, U+2026) as it has a more semantic meaning.
+- **原文側**は Trac の決定([#32875](https://core.trac.wordpress.org/ticket/32875) / [#8714](https://core.trac.wordpress.org/ticket/8714))で `&hellip;`(三点リーダーの HTML エンティティ表記)に統一されている。異なる文字エンコーディング環境での互換性を保つための技術的配慮
+
+**7-2. `&hellip;` は違反ではない**
+
+`&hellip;` は三点リーダーの別表記であり、原文が `&hellip;` の場合や HTML として出力される文脈がある。訳文で推奨するのはリテラルの「…」だが、`&hellip;` をピリオド3個扱いで修正する必要はない。
+
+**7-3. 用語集には登録できない**
+
+「ピリオド3個」のような表記は用語集(glossary)のエントリーにできないため、Consistency Tool では拾えない。`scripts/validate_po.py` の `ELLIPSIS`(WARN)で機械的に検出する(HTMLタグの内側・HTMLエンティティ・プレースホルダー・URL は対象外)。

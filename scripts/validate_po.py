@@ -40,6 +40,9 @@ WordPress 日本語翻訳スタイルガイドに基づいて、機械的に検�
   ALPHA_SPACING         半角英字と全角文字の間に必要な半角スペースがない [WARN]
                         (例: 「担当者のFacebook」→「担当者の Facebook」)
   PUNCT_SPACING         日本語直後の ! / ? にスペースがない [WARN]
+  ELLIPSIS              省略記号にピリオド3個を使っている [WARN]
+                        (「読み込み中...」→「読み込み中…」。公式スタイルガイドに
+                         規定はなく #ja-docs での合意に基づく)
   WRITING_CONVENTION    「ください」「すべて」「すでに」等の表記 [WARN]
 """
 from __future__ import annotations
@@ -602,10 +605,10 @@ _MASK_RES: list[re.Pattern] = [
 _MASK_CHAR = '\x00'
 
 
-def _mask_ignored(s: str) -> str:
+def _mask_ignored(s: str, patterns: list[re.Pattern] | None = None) -> str:
     """判定対象外の部分を同じ長さの制御文字で潰す(オフセットは保つ)。"""
     masked = s
-    for pattern in _MASK_RES:
+    for pattern in (_MASK_RES if patterns is None else patterns):
         masked = pattern.sub(lambda m: _MASK_CHAR * len(m.group()), masked)
     return masked
 
@@ -688,6 +691,41 @@ def check_punct_spacing(entry: PoEntry, filepath: Path) -> list[Violation]:
     return violations
 
 
+# 省略記号にピリオド3個(以上)を使っている箇所。
+# 公式スタイルガイドには規定がなく、Making WordPress Slack #ja-docs での合意と、
+# @wordpress/eslint-plugin の i18n-ellipsis ルールに基づく (notation-rules.md 7)
+_ELLIPSIS_RE = re.compile(r'\.{3,}')
+
+# ELLIPSIS 判定でだけ追加でマスクするもの。URL 中のピリオドを違反にしないため。
+# HTMLタグ・エンティティ・プレースホルダーは _MASK_RES 側で既に除外される
+# (`&hellip;` は三点リーダーの別表記なので、そもそもこの正規表現に当たらない)
+_URL_RE = re.compile(r'(?:https?|ftp)://[^\s"\'<>]+')
+_ELLIPSIS_MASK_RES = _MASK_RES + [_URL_RE]
+
+
+def check_ellipsis(entry: PoEntry, filepath: Path) -> list[Violation]:
+    """ELLIPSIS: 省略記号にピリオド3個を使っていないか(三点リーダー「…」に統一)。"""
+    violations: list[Violation] = []
+
+    for msgstr in _all_msgstrs(entry):
+        m = _ELLIPSIS_RE.search(_mask_ignored(msgstr, _ELLIPSIS_MASK_RES))
+        if m:
+            snippet = msgstr[max(0, m.start() - 8):m.end() + 8]
+            violations.append(Violation(
+                filepath=filepath,
+                entry=entry,
+                rule_id="ELLIPSIS",
+                severity="WARN",
+                message=(
+                    f"省略記号はピリオド3個ではなく三点リーダー「…」(U+2026) を使います"
+                    f" (#ja-docs での合意。notation-rules.md 7 参照): 「{snippet}」\n"
+                    f"  msgstr: \"{msgstr[:80]}\""
+                ),
+            ))
+
+    return violations
+
+
 # 表記統一チェック: 「下さい」→「ください」等
 _WRITING_CHECKS: list[tuple[re.Pattern, str]] = [
     (re.compile(r'下さい'),  '「下さい」ではなく「ください」を使う'),
@@ -728,6 +766,7 @@ _CHECKS = [
     check_number_spacing,
     check_alpha_spacing,
     check_punct_spacing,
+    check_ellipsis,
     check_writing_conventions,
 ]
 
@@ -743,6 +782,7 @@ KNOWN_RULE_IDS = frozenset({
     "NUM_SPACING_TOKEN",
     "ALPHA_SPACING",
     "PUNCT_SPACING",
+    "ELLIPSIS",
     "WRITING_CONVENTION",
 })
 
