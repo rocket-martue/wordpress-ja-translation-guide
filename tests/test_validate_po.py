@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""validate_po.py の NUM_SPACING 系判定と --ignore のテスト (Issue #18)。
+"""validate_po.py のチェック判定と CLI オプションのテスト。
+
+対象: NUM_SPACING 系の分類と --ignore (Issue #18)、ELLIPSIS (Issue #16)。
 
 追加依存なし(標準ライブラリの unittest / subprocess のみ)。
 
@@ -110,6 +112,74 @@ class NumberSpacingClassificationTest(unittest.TestCase):
         )
         ids = [v.rule_id for v in validate_po.check_number_spacing(entry, Path("dummy.po"))]
         self.assertEqual(sorted(ids), ["NUM_SPACING", "NUM_SPACING_TOKEN"])
+
+
+def ellipsis_ids(msgstr: str) -> list[str]:
+    """msgstr を1エントリーとして check_ellipsis にかけ、ルールIDを返す。"""
+    entry = validate_po.PoEntry(msgid="dummy", msgstr=msgstr, line=1)
+    return [v.rule_id for v in validate_po.check_ellipsis(entry, Path("dummy.po"))]
+
+
+class EllipsisTest(unittest.TestCase):
+    """省略記号はピリオド3個ではなく三点リーダー「…」 (Issue #16)。"""
+
+    def test_three_dots_are_flagged(self):
+        cases = [
+            "読み込み中...",
+            "アップロード中...",
+            "しばらくお待ちください....",   # 4個以上も同じ違反
+            "接続中...です",
+        ]
+        for msgstr in cases:
+            with self.subTest(msgstr=msgstr):
+                self.assertEqual(ellipsis_ids(msgstr), ["ELLIPSIS"])
+
+    def test_horizontal_ellipsis_is_ok(self):
+        """リテラルの「…」(U+2026) と &hellip; は違反にしない。"""
+        cases = [
+            "読み込み中…",
+            "読み込み中&hellip;",
+            "設定を保存しました。",          # ピリオド1個
+            "バージョン 1.2.3 に更新",       # 連続しないピリオド
+        ]
+        for msgstr in cases:
+            with self.subTest(msgstr=msgstr):
+                self.assertEqual(ellipsis_ids(msgstr), [])
+
+    def test_masked_contexts_are_not_flagged(self):
+        """HTMLタグ・エンティティ・プレースホルダー・URL 内は対象外。"""
+        cases = [
+            '<a href="...">詳細</a>',
+            "詳しくは https://example.com/a...b を参照",
+            "%s...",                          # プレースホルダーはマスクされるが後続の ... は残る
+        ]
+        expected = [[], [], ["ELLIPSIS"]]
+        for msgstr, want in zip(cases, expected):
+            with self.subTest(msgstr=msgstr):
+                self.assertEqual(ellipsis_ids(msgstr), want)
+
+    def test_ellipsis_right_after_url_is_flagged(self):
+        """URL の直後に続く省略記号は URL の一部ではないので検出する。
+
+        URL を「空白以外の連続」でマスクすると `)...` まで飲み込んで
+        見逃す。_URL_RE の過剰マッチに対する退行検知。
+        """
+        cases = [
+            "詳しくは (https://example.com)...",
+            "https://example.com/page... を参照",
+            "詳しくは https://example.com をご覧ください...",
+            "https://example.comを参照...",     # 空白なしで日本語が続く場合
+        ]
+        for msgstr in cases:
+            with self.subTest(msgstr=msgstr):
+                self.assertEqual(ellipsis_ids(msgstr), ["ELLIPSIS"])
+
+    def test_plural_msgstr_is_checked(self):
+        entry = validate_po.PoEntry(
+            msgid="dummy", msgstr_plural=["読み込み中…", "読み込み中..."], line=1
+        )
+        ids = [v.rule_id for v in validate_po.check_ellipsis(entry, Path("dummy.po"))]
+        self.assertEqual(ids, ["ELLIPSIS"])
 
 
 SAMPLE_PO = '''msgid ""

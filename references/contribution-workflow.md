@@ -112,6 +112,7 @@ python /path/to/wordpress-ja-translation-guide/scripts/validate_po.py path/to/ja
 | `NUM_SPACING_TOKEN` | WARN | バージョン番号・識別子トークン直後のスペース(例: `PHP 8.1 以上`、`ISO8601 の日時`。公式に規定がない係争点。notation-rules.md 1-9 の補足参照) |
 | `ALPHA_SPACING` | WARN | 半角英字と全角文字の間に半角スペースがない(例: `担当者のFacebook`。notation-rules.md 1-4参照) |
 | `PUNCT_SPACING` | WARN | 日本語直後の ! / ? の前にスペースがない |
+| `ELLIPSIS` | WARN | 省略記号にピリオド3個を使っている(`読み込み中...` → `読み込み中…`。公式規定外の #ja-docs 合意。notation-rules.md 7 参照) |
 | `WRITING_CONVENTION` | WARN | 「下さい」「全て」「既に」等の表記ゆれ |
 
 ERROR が残った状態での Import は行わない。WARN は目視判断のうえ修正する。
