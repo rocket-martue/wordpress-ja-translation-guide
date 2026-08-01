@@ -158,6 +158,22 @@ class EllipsisTest(unittest.TestCase):
             with self.subTest(msgstr=msgstr):
                 self.assertEqual(ellipsis_ids(msgstr), want)
 
+    def test_ellipsis_right_after_url_is_flagged(self):
+        """URL の直後に続く省略記号は URL の一部ではないので検出する。
+
+        URL を「空白以外の連続」でマスクすると `)...` まで飲み込んで
+        見逃す。_URL_RE の過剰マッチに対する退行検知。
+        """
+        cases = [
+            "詳しくは (https://example.com)...",
+            "https://example.com/page... を参照",
+            "詳しくは https://example.com をご覧ください...",
+            "https://example.comを参照...",     # 空白なしで日本語が続く場合
+        ]
+        for msgstr in cases:
+            with self.subTest(msgstr=msgstr):
+                self.assertEqual(ellipsis_ids(msgstr), ["ELLIPSIS"])
+
     def test_plural_msgstr_is_checked(self):
         entry = validate_po.PoEntry(
             msgid="dummy", msgstr_plural=["読み込み中…", "読み込み中..."], line=1
