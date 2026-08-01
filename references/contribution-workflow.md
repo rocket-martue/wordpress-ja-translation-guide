@@ -93,6 +93,7 @@ JSON の値は2形式あり、**msgid 照合付きのオブジェクト形式を
 python ~/.claude/skills/wordpress-ja-translation-guide/scripts/validate_po.py path/to/ja.po
 python ~/.claude/skills/wordpress-ja-translation-guide/scripts/validate_po.py "path/to/languages/*.po"
 python ~/.claude/skills/wordpress-ja-translation-guide/scripts/validate_po.py --errors-only path/to/ja.po  # ERROR のみ表示
+python ~/.claude/skills/wordpress-ja-translation-guide/scripts/validate_po.py --ignore NUM_SPACING_TOKEN path/to/ja.po  # 特定ルールを除外
 
 # リポジトリをクローンして使う場合
 python /path/to/wordpress-ja-translation-guide/scripts/validate_po.py path/to/ja.po
@@ -108,11 +109,19 @@ python /path/to/wordpress-ja-translation-guide/scripts/validate_po.py path/to/ja
 | `FULLWIDTH_ALPHA` | WARN | 全角英字(Ａ-Ｚ、ａ-ｚ) |
 | `FULLWIDTH_PUNCT` | WARN | 全角感嘆符・疑問符(！？) |
 | `NUM_SPACING` | WARN | 数字・数値プレースホルダー(`%d`等)直後の不要なスペース(`%s`は対象外、notation-rules.md 6-1参照) |
+| `NUM_SPACING_TOKEN` | WARN | バージョン番号・識別子トークン直後のスペース(例: `PHP 8.1 以上`、`ISO8601 の日時`。公式に規定がない係争点。notation-rules.md 1-9 の補足参照) |
 | `ALPHA_SPACING` | WARN | 半角英字と全角文字の間に半角スペースがない(例: `担当者のFacebook`。notation-rules.md 1-4参照) |
 | `PUNCT_SPACING` | WARN | 日本語直後の ! / ? の前にスペースがない |
 | `WRITING_CONVENTION` | WARN | 「下さい」「全て」「既に」等の表記ゆれ |
 
 ERROR が残った状態での Import は行わない。WARN は目視判断のうえ修正する。
+
+`--errors-only` と `--ignore` は用途が違う:
+
+- `--errors-only` … 表示だけを ERROR に絞る。**終了コードには影響しない**(WARN しか残っていなくても 1 で終わる)
+- `--ignore RULE` … 指定したルールを表示・件数サマリー・**終了コードのすべて**から除外する。プロジェクトとして方針が決まっているルール(典型は `NUM_SPACING_TOKEN`)を黙らせ、残りの WARN に集中するために使う。複数指定・カンマ区切り可
+
+末尾には合計に続けてルールID別の内訳が出るので、数千エントリー規模でも「どのルールが何件か」を先に把握してから仕分けに入れる。
 
 ### 1.3. fix_spacing.py の使い方
 
