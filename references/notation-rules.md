@@ -1,6 +1,8 @@
 # 表記ルール詳細(全角半角・句読点・括弧・カタカナ語)
 
-ja.wordpress.org 公式[翻訳スタイルガイド](https://ja.wordpress.org/team/handbook/translation/translation-style-guide/) 1〜2章・4〜5章・7〜8章に基づく。SKILL.mdの要点を補足する詳細資料。判断に迷ったらここを確認する。
+1〜6章は ja.wordpress.org 公式[翻訳スタイルガイド](https://ja.wordpress.org/team/handbook/translation/translation-style-guide/) 1〜2章・4〜5章・7〜8章に基づく。SKILL.mdの要点を補足する詳細資料。判断に迷ったらここを確認する。
+
+**7章だけは公式規定外**。公式スタイルガイドに該当する規定がなく、Making WordPress Slack #ja-docs での合意に基づく補足なので、1〜6章とは根拠の強さが異なる(節の冒頭にも注記あり)。
 
 ## 目次
 
