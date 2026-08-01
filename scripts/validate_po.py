@@ -13,6 +13,13 @@ WordPress 日本語翻訳スタイルガイドに基づいて、機械的に検�
     python scripts/validate_po.py path/to/ja.po path/to/other.po
     python scripts/validate_po.py "path/to/*.po"
     python scripts/validate_po.py --errors-only path/to/ja.po
+    python scripts/validate_po.py --ignore NUM_SPACING_TOKEN path/to/ja.po
+
+--errors-only と --ignore の違い:
+    --errors-only  表示だけを ERROR に絞る。終了コードには影響しない
+                   (WARN しかなくても 1 で終わる)
+    --ignore RULE  指定したルールを表示・件数サマリー・終了コードのすべてから
+                   除外する。「このルールは方針として受け入れ済み」の宣言に使う
 
 終了コード:
     0 = 違反なし
@@ -27,6 +34,9 @@ WordPress 日本語翻訳スタイルガイドに基づいて、機械的に検�
   FULLWIDTH_PUNCT       全角感嘆符・疑問符 (！？) [WARN]
   NUM_SPACING           数字・数値プレースホルダー(%d等)直後の不要なスペース [WARN]
                         (文字列プレースホルダー %s は対象外。公式例では前後にスペースを入れる)
+  NUM_SPACING_TOKEN     バージョン番号・識別子トークン直後のスペース [WARN]
+                        (例: 「PHP 8.1 以上」「ISO8601 の日時」。公式に規定がない
+                         係争点なので NUM_SPACING と分けて報告する)
   ALPHA_SPACING         半角英字と全角文字の間に必要な半角スペースがない [WARN]
                         (例: 「担当者のFacebook」→「担当者の Facebook」)
   PUNCT_SPACING         日本語直後の ! / ? にスペースがない [WARN]
@@ -443,42 +453,108 @@ _JA = r'[぀-ゟ゠-ヿ一-鿿㐀-䶿]'
 _PH_SPACE_RE = re.compile(r'(%(?:\d+\$)?[-+ 0]*\d*(?:\.\d+)?[difu])[ \t]+(?=' + _JA + r')')
 _NUM_SPACE_RE = re.compile(r'(\d)[ \t]+(?=' + _JA + r')')
 
+# 数字を含む「半角トークン」を構成する文字。バージョン番号 (8.1 / 2.5.0)、
+# 規格名 (ISO8601 / IPv4 / UTC+0)、識別子・プロパティ参照 (run_updates_v1 /
+# errors.length) を1つの塊として捉えるために使う
+_TOKEN_CHAR_RE = re.compile(r'[A-Za-z0-9_.+-]')
+
+
+def _is_token_digit(s: str, digit_index: int) -> bool:
+    """
+    s[digit_index] の数字が、数量ではなく半角トークンの一部とみなせるか。
+
+    1-9「半角数字の前後には半角スペースを入れない」が対象にしているのは数量・
+    数値(`1件のコメント`)であり、`PHP 8.1 以上` `ISO8601 の日時` のように数字が
+    バージョン番号・規格名・識別子の一部になっている場合の扱いは公式スタイル
+    ガイドに規定がない(notation-rules.md 1-9 の補足を参照)。そこで後者を
+    NUM_SPACING_TOKEN として切り分け、仕分けできるようにする。
+
+    判定は数字の直前だけを見る:
+
+    1. 数字を含むトークンに ASCII 英字が含まれる
+       → ISO8601 / IPv4 / UTC+0 / G2 / v1 / run_updates_v1 / errors.length
+    2. トークンが純粋な数字列で、直前が「半角スペース + 半角英字」
+       → PHP 8.1 / MainWP 5.0 / LibreSSL 2.5.0 / MainWP 101
+
+    割り切り:
+
+    - `バージョン 5 へ` のように全角語の直後に来る数字はどちらにも当たらず
+      NUM_SPACING のまま。公式 1-3 の例が `バージョン5.5` である以上、これは
+      真の違反として残すのが正しい
+    - `errors.length > 0 で` はトークンが `0` 単体なので NUM_SPACING のまま。
+      比較式までさかのぼると判定が過剰に複雑になるため踏み込まない
+    - 逆に `Google 5 件のエラー` のような真の違反が 2 に当たって
+      NUM_SPACING_TOKEN 側へ回ることはある。握りつぶすのではなく分類が
+      変わるだけなので、この取りこぼしは許容する
+    """
+    start = digit_index
+    while start > 0 and _TOKEN_CHAR_RE.match(s[start - 1]):
+        start -= 1
+
+    token = s[start:digit_index + 1]
+    if any(_is_ascii_alpha(c) for c in token):
+        return True
+
+    # 「半角英字 + 半角スペース + 数字」(PHP 8.1)。全角語の直後は対象外
+    return start >= 2 and s[start - 1] in ' \t' and _is_ascii_alpha(s[start - 2])
+
+
+def _spacing_violation(
+    entry: PoEntry, filepath: Path, msgstr: str, rule_id: str,
+    match_start: int, match_end: int, message: str,
+) -> Violation:
+    """NUM_SPACING 系の Violation を、前後5文字の抜粋付きで組み立てる。"""
+    snippet = msgstr[max(0, match_start - 5):match_end + 5]
+    return Violation(
+        filepath=filepath,
+        entry=entry,
+        rule_id=rule_id,
+        severity="WARN",
+        message=(
+            f"{message}: 「...{snippet}...」\n"
+            f"  msgstr: \"{msgstr[:80]}\""
+        ),
+    )
+
 
 def check_number_spacing(entry: PoEntry, filepath: Path) -> list[Violation]:
-    """NUM_SPACING: 数値プレースホルダー(%d等)・半角数字直後の不要なスペース。"""
+    """
+    NUM_SPACING       数値プレースホルダー(%d等)・半角数字直後の不要なスペース。
+    NUM_SPACING_TOKEN バージョン番号・識別子トークン直後のスペース(公式に規定なし)。
+
+    同一 msgstr からはルールIDごとに最大1件だけ報告する。1件目で打ち切ると
+    `ISO8601 の日時と バージョン 5 では` のような訳文で真の違反が隠れるため、
+    全マッチを走査したうえで重複排除する。
+    """
     violations: list[Violation] = []
 
     for msgstr in _all_msgstrs(entry):
+        reported: set[str] = set()
+
         m = _PH_SPACE_RE.search(msgstr)
         if m:
-            # 前後の文脈を取得
-            start = max(0, m.start() - 5)
-            snippet = msgstr[start:m.end() + 5]
-            violations.append(Violation(
-                filepath=filepath,
-                entry=entry,
-                rule_id="NUM_SPACING",
-                severity="WARN",
-                message=(
-                    f"数値プレースホルダー直後のスペースは不要です: 「...{snippet}...」\n"
-                    f"  msgstr: \"{msgstr[:80]}\""
-                ),
+            reported.add("NUM_SPACING")
+            violations.append(_spacing_violation(
+                entry, filepath, msgstr, "NUM_SPACING", m.start(), m.end(),
+                "数値プレースホルダー直後のスペースは不要です",
             ))
-            continue  # 同一 msgstr で重複報告しない
 
-        m = _NUM_SPACE_RE.search(msgstr)
-        if m:
-            start = max(0, m.start() - 5)
-            snippet = msgstr[start:m.end() + 5]
-            violations.append(Violation(
-                filepath=filepath,
-                entry=entry,
-                rule_id="NUM_SPACING",
-                severity="WARN",
-                message=(
-                    f"半角数字の直後にスペースは不要です: 「...{snippet}...」\n"
-                    f"  msgstr: \"{msgstr[:80]}\""
-                ),
+        for m in _NUM_SPACE_RE.finditer(msgstr):
+            if _is_token_digit(msgstr, m.start(1)):
+                rule_id = "NUM_SPACING_TOKEN"
+                message = (
+                    "バージョン番号・識別子とみられるトークン直後のスペースです"
+                    " (公式に規定なし。プロジェクトの既存訳に合わせる。意図的なら修正不要)"
+                )
+            else:
+                rule_id = "NUM_SPACING"
+                message = "半角数字の直後にスペースは不要です"
+
+            if rule_id in reported:
+                continue
+            reported.add(rule_id)
+            violations.append(_spacing_violation(
+                entry, filepath, msgstr, rule_id, m.start(), m.end(), message,
             ))
 
     return violations
@@ -655,6 +731,21 @@ _CHECKS = [
     check_writing_conventions,
 ]
 
+# --ignore に指定できるルールID。タイポを終了コード 2 で弾くために使う。
+# チェック関数を増やしたらここにも追加する
+KNOWN_RULE_IDS = frozenset({
+    "PH_MISMATCH",
+    "BRAND_TRANSLITERATION",
+    "FULLWIDTH_DIGIT",
+    "FULLWIDTH_ALPHA",
+    "FULLWIDTH_PUNCT",
+    "NUM_SPACING",
+    "NUM_SPACING_TOKEN",
+    "ALPHA_SPACING",
+    "PUNCT_SPACING",
+    "WRITING_CONVENTION",
+})
+
 
 def validate_file(filepath: Path) -> tuple[list[PoEntry], list[Violation]]:
     """
@@ -722,9 +813,28 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--errors-only",
         action="store_true",
-        help="ERROR レベルの違反のみ表示する(WARN は表示しない)",
+        help="ERROR レベルの違反のみ表示する(WARN は表示しない。終了コードは変わらない)",
+    )
+    parser.add_argument(
+        "--ignore",
+        action="append",
+        metavar="RULE",
+        default=[],
+        help=(
+            "指定したルールIDを表示・件数サマリー・終了コードのすべてから除外する"
+            "(複数指定可、カンマ区切り可。例: --ignore NUM_SPACING_TOKEN)"
+        ),
     )
     args = parser.parse_args(argv)
+
+    ignored: set[str] = {
+        rule.strip() for item in args.ignore for rule in item.split(",") if rule.strip()
+    }
+    unknown = sorted(ignored - KNOWN_RULE_IDS)
+    if unknown:
+        print(f"[ERROR] 不明なルールID: {', '.join(unknown)}", file=sys.stderr)
+        print(f"  指定できるルールID: {', '.join(sorted(KNOWN_RULE_IDS))}", file=sys.stderr)
+        return 2
 
     paths = resolve_paths(args.files)
     if not paths:
@@ -745,6 +855,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[ERROR] 読み込みエラー: {filepath}: {e}", file=sys.stderr)
             has_read_error = True
             continue
+
+        if ignored:
+            violations = [v for v in violations if v.rule_id not in ignored]
 
         translated = sum(1 for e in entries if _is_translated(e))
         print(f"checking: {filepath} ({len(entries)} エントリー、翻訳済み {translated} 件)")
@@ -769,6 +882,14 @@ def main(argv: list[str] | None = None) -> int:
     warns = [v for v in all_violations if v.severity == "WARN"]
     print(f"{'=' * 60}")
     print(f"合計 {len(all_violations)} 件の違反  ({len(errors)} ERROR / {len(warns)} WARN)")
+
+    # ルールID別の内訳。ERROR → WARN の順、同一重大度内は件数の多い順
+    by_rule = Counter((v.severity, v.rule_id) for v in all_violations)
+    for (severity, rule_id), count in sorted(
+        by_rule.items(), key=lambda kv: (kv[0][0] != "ERROR", -kv[1], kv[0][1])
+    ):
+        print(f"  {severity:<5}  {rule_id:<22}{count:>4} 件")
+
     if errors:
         print("→ ERROR は translate.wordpress.org へ反映する前に必ず修正してください")
 
