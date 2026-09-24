@@ -118,6 +118,22 @@ msgstr "訳文の文字列"
 
 コマンドリファレンスと詳細は `references/contribution-workflow.md` の「1.1」を参照。
 
+## Claude Code でサブエージェントに下訳を分担させる場合
+
+未翻訳が多いとき、Claude Code のように Agent ツールでサブエージェントを起動できる環境では、**下訳の生成だけ**を並列に任せられる。書き込みと validate は上のループのままメインが直列で行う。Agent ツールが使えない環境(Claude.ai など)では上の直列ループで進める。手順の詳細は `references/parallel-translation-workflow.md`、スクリプトの使い方は `references/contribution-workflow.md` の「1.4」。
+
+流れ: `po_chunk.py` で未翻訳をチャンクに分割 → 共通訳語リスト(`references/glossary-template.md` の型)を作ってユーザーに確認 → 各チャンクをサブエージェントに渡し下訳 JSON を書かせる → `po_collect.py` で回収・機械チェック → `po_apply_loop.py` で直列適用 → 最終 validate と表記ゆれの通し確認 → 報告。
+
+絶対に守ること:
+
+- **サブエージェントに `.po` を書かせない**。書かせるのはメインが指示した下訳 JSON のパス 1 つだけ(チャンクごとに別パス)
+- **サブエージェントに `apply_translations.py` のインデックスを渡さない**。インデックスは適用のたびに振り直されるので、生成と適用の間に時間差があると必ずズレる。適用時のインデックスはメインが直前の `--list` で毎回引き直す
+- **サブエージェントに `.po` を読ませない**。既存訳の見本は `po_chunk.py` がチャンクに添付する
+
+下訳専用のエージェント定義は `assets/agents/po-draft-translator.md` に同梱している(Skill 単体では自動登録されないので、Claude Code では `~/.claude/agents/` に一度コピーする。README 参照)。定義が無ければ `general-purpose` サブエージェントに `model: sonnet` で同じファイルを読ませて代用してよいが、ツール制限と `effort` は効かないので「`.po` を書かない・読まない」をプロンプトで明示する。
+
+並列化して速くなるのは下訳までで、**完了しても人間レビューと手動 Import は残る**。「これで完成」と断定せず、最後に必ずその旨を伝える。
+
 ## 出力後のセルフチェックリスト
 
 訳文を出力する際は、必ず以下を確認してから提示すること:

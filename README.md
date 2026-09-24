@@ -26,6 +26,8 @@ ja.wordpress.org 公式の[翻訳ハンドブック](https://ja.wordpress.org/te
 - [`references/word-choice-rules.md`](./references/word-choice-rules.md) — 訳語統一・文体ルール・ブランド名・用語集の使い方
 - [`references/glossary.md`](./references/glossary.md) — [公式用語集](https://translate.wordpress.org/locale/ja/default/glossary/)全エントリーのスナップショット(英語・品詞・日本語訳・補足。取得日と収録件数はファイル冒頭に記載)
 - [`references/contribution-workflow.md`](./references/contribution-workflow.md) — 一括翻訳ワークフローとスクリプトの使い方、自動化してよい範囲・してはいけない範囲
+- [`references/parallel-translation-workflow.md`](./references/parallel-translation-workflow.md) — Claude Code でサブエージェントに下訳を分担させる手順(フェーズ①〜④・トラブルシューティング)
+- [`references/glossary-template.md`](./references/glossary-template.md) — 分担翻訳の前に作るプロジェクト共通訳語リストの型
 
 ## 使い方
 
@@ -50,6 +52,16 @@ ja.wordpress.org 公式の[翻訳ハンドブック](https://ja.wordpress.org/te
 ### .skillファイルとして直接共有する場合
 
 このリポジトリの [Releases](../../releases) (または直接配布されたファイル)から `wordpress-ja-translation-guide.skill` を入手し、Claude にインストールしてください。
+
+### Claude Code でサブエージェント並列を使う場合
+
+未翻訳が多い `.po` では、下訳の生成だけをサブエージェントに並列で任せられます(書き込みと validate はメインが直列で行います)。下訳専用のエージェント定義 [`assets/agents/po-draft-translator.md`](./assets/agents/po-draft-translator.md) を同梱していますが、Skill 単体では自動登録されないため、一度だけ Claude Code のエージェントディレクトリにコピーしてください。
+
+```bash
+cp ~/.claude/skills/wordpress-ja-translation-guide/assets/agents/po-draft-translator.md ~/.claude/agents/
+```
+
+手順は [`references/parallel-translation-workflow.md`](./references/parallel-translation-workflow.md) にあります。Agent ツールが無い環境(Claude.ai の Desktop / Cowork など)では、この節は使えないため、SKILL.md の直列ループで進みます。並列化しても人間による目視レビューと手動 Import は省略できません。
 
 ## 注意事項
 
@@ -79,7 +91,7 @@ python scripts/package_skill.py -o dist
 ### スクリプトがやっていること
 
 - `SKILL.md` の存在と、frontmatter(`name` / `description`)が正しく書かれているかを検証
-- `.git` / `.github` / `dist` / `__pycache__` / `CLAUDE.md` / `package_skill.py` / `update_glossary.py` など配布に不要なファイルを除外しつつ、リポジトリ全体を `wordpress-ja-translation-guide/` フォルダごとzip化(`scripts/` 内の `apply_translations.py`・`validate_po.py`・`fix_spacing.py`・`po_chunk.py`・`po_collect.py`・`po_apply_loop.py` はSKILL.mdや references が参照するランタイムツールのため同梱。`tests/` は除外)
+- `.git` / `.github` / `dist` / `__pycache__` / `CLAUDE.md` / `package_skill.py` / `update_glossary.py` など配布に不要なファイルを除外しつつ、リポジトリ全体を `wordpress-ja-translation-guide/` フォルダごとzip化(`assets/` は同梱。`scripts/` 内の `apply_translations.py`・`validate_po.py`・`fix_spacing.py`・`po_chunk.py`・`po_collect.py`・`po_apply_loop.py` はSKILL.mdや references が参照するランタイムツールのため同梱。`tests/` は除外)
 
 ### 用語集の更新: update_glossary.py
 
