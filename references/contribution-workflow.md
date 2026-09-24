@@ -33,7 +33,7 @@
 > python /path/to/wordpress-ja-translation-guide/scripts/apply_translations.py path/to/ja.po --list
 > ```
 >
-> 「このリポジトリにスクリプトは無い」と思っても、まず上記のSkillインストール先を確認すること(自前の代替スクリプトを書かない)。
+> 「このリポジトリにスクリプトは無い」と思っても、まず上記のSkillインストール先を確認すること。
 
 生の`.po`構文に`str_replace`で書き込もうとすると、`msgstr ""`が大量に重複するため一意に特定できず、置換失敗やリトライが発生する。`scripts/apply_translations.py`経由でバッチ書き込みすることで、このコストを完全に除去できる。
 
