@@ -701,8 +701,13 @@ def unique_dest(dirpath: Path, name: str) -> Path:
     return dest
 
 
-def write_back(written: dict[Path, list[tuple[int, str, Path]]], report: list[str]) -> tuple[int, list[Path]]:
+def write_back(written: dict[Path, list[tuple[int, str, Path, str, str | None]]], report: list[str]) -> tuple[int, list[Path]]:
     """rework で通った訳文を通常ドラフトへ書き戻す。(書き戻した件数, 失敗した通常ドラフト) を返す。
+
+    msgstr だけでなく id / ctx も対応表の値で直す。番号ズレ(ID_MISMATCH / CTX_MISMATCH)が
+    原因の rework で msgstr だけ書き戻すと、通常ドラフトの id / ctx が間違ったまま残り、次の
+    po_collect.py で同じエントリーが再び NG になって rework チャンクが際限なく作られる。
+    ctx は None なら触らない(対応表に msgctxt の項目が無い旧世代)、"" なら項目を消す。
 
     一時ファイルに書いてから置き換えるので、途中で失敗しても通常ドラフトは壊れない。
     """
@@ -711,8 +716,15 @@ def write_back(written: dict[Path, list[tuple[int, str, Path]]], report: list[st
     for opath, updates in written.items():
         try:
             data = json.loads(opath.read_text(encoding="utf-8"))
-            for idx, mstr, _rpath in updates:
+            for idx, mstr, _rpath, new_id, new_ctx in updates:
                 data[idx]["msgstr"] = mstr
+                data[idx]["id"] = new_id
+                if new_ctx is None:
+                    pass
+                elif new_ctx:
+                    data[idx]["ctx"] = new_ctx
+                else:
+                    data[idx].pop("ctx", None)
             tmp = opath.with_name(opath.name + ".tmp")
             tmp.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
             tmp.replace(opath)
@@ -785,7 +797,8 @@ def main() -> int:
     bad_total = 0
     origin: dict[str, tuple[Path, int]] = {}             # 旧形式(番号なし)用: msgid -> 位置
     origin_by_ek: dict[tuple, tuple[Path, int]] = {}     # エントリー鍵 -> 通常ドラフト内の位置(書き戻し先)
-    rework_hits: dict[tuple, tuple[str, str, Path]] = {}  # エントリー鍵 -> (msgid, msgstr, そのドラフト)
+    # エントリー鍵 -> (msgid, msgstr, そのドラフト, 対応表のエントリー)。対応表は書き戻しで id / ctx を直すのに使う
+    rework_hits: dict[tuple, tuple[str, str, Path, dict | None]] = {}
     parsed_rework_files: list[Path] = []
     bad_rework_files: set[Path] = set()
     # 通常ドラフトで回収済みの (チャンクキー, n) -> そのドラフト名。msgid ではなく番号で数える。
@@ -1057,7 +1070,7 @@ def main() -> int:
                 continue
             if is_rework:
                 if status in ("ok", "hold", "manual"):
-                    rework_hits[ek] = (mid, item["msgstr"], path)
+                    rework_hits[ek] = (mid, item["msgstr"], path, chunk_entry)
                 else:
                     rework_hits.pop(ek, None)
             else:
@@ -1105,9 +1118,9 @@ def main() -> int:
 
     # rework で通った訳文を元の通常ドラフトに書き戻し、読み終えた rework ドラフトを consumed/ へ移す。
     # 通常ドラフトが常に最新の訳を持つので、古い rework ドラフトが後から上書きすることはない
-    written: dict[Path, list[tuple[int, str, Path]]] = collections.defaultdict(list)
+    written: dict[Path, list[tuple[int, str, Path, str, str | None]]] = collections.defaultdict(list)
     no_target: set[Path] = set()      # 書き戻し先が見つからなかった rework ドラフト
-    for ek, (mid, mstr, rpath) in rework_hits.items():
+    for ek, (mid, mstr, rpath, rw_entry) in rework_hits.items():
         final = pool.get(mid, hold.get(mid))
         if final is None and any(c.get("msgstr") == mstr for c in manual.get(mid, [])):
             final = mstr
@@ -1135,7 +1148,10 @@ def main() -> int:
             no_target.add(rpath)
             continue
         opath, idx = target
-        written[opath].append((idx, mstr, rpath))
+        # id は契約どおり msgid の先頭 30 文字。ctx は対応表に msgctxt があるときだけ直す
+        new_id = mid.strip()[:ID_PREVIEW_LEN]
+        new_ctx = rw_entry.get("msgctxt", "") if rw_entry and rw_entry.get("schema_ctx") else None
+        written[opath].append((idx, mstr, rpath, new_id, new_ctx))
     nback, failed_back = write_back(written, report)
     bad_total += len(failed_back)
     # 書き戻せなかった項目や不正な項目を含む rework ドラフトは drafts/ に残す(次回もう一度読む)
