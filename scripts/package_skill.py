@@ -29,6 +29,7 @@ EXCLUDE_DIR_NAMES = {
     ".git", ".github", ".claude", "__pycache__", "node_modules", "dist", "evals", "tests",
 }
 EXCLUDE_FILE_NAMES = {
+    ".git",          # git worktree では .git がディレクトリではなくファイル(gitdir ポインター)になる
     ".DS_Store",
     ".gitignore",
     ".gitattributes",
