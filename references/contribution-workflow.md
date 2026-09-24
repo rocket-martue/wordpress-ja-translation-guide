@@ -159,7 +159,7 @@ path/to/ja.po:17  (5 箇所)
 |---|---|---|
 | `po_chunk.py` | 未翻訳エントリーの抽出(`apply_translations.py --list` と同じ判定)、種別分類(readme の header / paragraph / list item、changelog、UI 文字列)、30 件または msgid 合計 3,000 字ごとの分割、既存訳の見本(`ref:` 行)と Project Glossary(`*-glossary.csv`)の添付、番号 → msgid の対応表 | 0 = 成功 |
 | `po_collect.py` | 訳者が書いた下訳 JSON の回収、ドラフト段階の機械チェック(下表)、`pool.json`(適用対象)/ `hold.json`(`[要確認]` 付き)/ `manual.json`(msgctxt 違いで同じ msgid が複数あるもの)/ `missing.json`(未回収)/ `rework.json`(機械チェック NG)への振り分け、rework 用チャンクの生成 | 0 = 問題なし / 2 = 未回収あり / 3 = rework あり / 4 = ドラフトの形式エラー |
-| `po_apply_loop.py` | `pool.json` を 20 件ずつ、`--list` 取り直し → msgid 照合付き JSON → apply → `validate_po.py --errors-only` で直列適用。書き込めなかったエントリーは `blocked.json` に落として次バッチから外す | 0 = 完了 / 2 = validate が ERROR で中断 |
+| `po_apply_loop.py` | `pool.json` を 20 件ずつ、未翻訳一覧の取り直し(`--list` と同じ判定)→ msgid 照合付き JSON → apply → `validate_po.py --errors-only` で直列適用。msgctxt 違いで同じ msgid が複数あるエントリーとプールに訳の無いエントリーは飛ばして先へ進む。書き込めなかったエントリーは `blocked.json` に落として次バッチから外す | 0 = 完了 / 2 = `.po` が読めない・apply が 1 件も書けない・validate が ERROR で中断 |
 
 ```bash
 # ① 準備: 未翻訳を抽出してチャンクに分割(--ref は見本を引く翻訳済み .po。コア訳などを渡す)

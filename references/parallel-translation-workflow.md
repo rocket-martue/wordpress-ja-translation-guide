@@ -143,7 +143,7 @@ python ~/.claude/skills/wordpress-ja-translation-guide/scripts/po_collect.py --o
 python ~/.claude/skills/wordpress-ja-translation-guide/scripts/po_apply_loop.py path/to/ja.po --outdir .work/{slug}
 ```
 
-**並列化禁止**。ループは `--list` 取り直し → msgid 照合付き JSON 20 件 → apply → `validate_po.py --errors-only`。`[ERROR]` が出たら中断する(終了コード 2)。書き込めなかったエントリーは `blocked.json` に落ちて次バッチから外れる(放置するとループが空転する)。
+**並列化禁止**。ループは未翻訳一覧の取り直し(`--list` と同じ判定)→ msgid 照合付き JSON 20 件 → apply → `validate_po.py --errors-only`。`[ERROR]` が出たら中断する(終了コード 2)。書き込めなかったエントリーは `blocked.json` に落ちて次バッチから外れる(放置するとループが空転する)。msgctxt 違いで同じ msgid が複数あるエントリーは `manual.json` と同じ扱いで送らず、末尾に一覧が出る。apply が 1 件も書けなかったとき(読み取り専用など)は `blocked.json` に入れずに終了コード 2 で止まる。
 
 `blocked.json` に残ったものは未翻訳のまま。原文に `100% free` のような裸の `%` があると `% f` がプレースホルダーとして誤検出され、構造上書き込めない。訳案を添えて人間に渡す。
 
