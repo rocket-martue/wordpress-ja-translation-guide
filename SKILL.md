@@ -111,7 +111,7 @@ msgstr "訳文の文字列"
 
 補足:
 
-- 複数形(`msgid_plural`)エントリーも `--list` に `(plural)` 付きで表示され、書き込み対象になる(存在するすべての `msgstr[N]` に同じ訳文が入る)。旧バージョンのスクリプトでは対象外だったため、心配なら `grep -n msgid_plural path/to/ja.po` で漏れがないか確認する
+- 複数形(`msgid_plural`)エントリーも `--list` に `(plural)` 付きで表示され、書き込み対象になる(存在するすべての `msgstr[N]` に同じ訳文が入る。日本語は単数/複数を区別しないため)
 - `ALPHA_SPACING`(半角英字と全角文字の間のスペース漏れ)が大量に出た場合は、同じ場所の `fix_spacing.py` で機械挿入できる(`--apply` なしの dry-run で差分を確認 → `--apply` → `validate_po.py` で再検証。詳細は `references/contribution-workflow.md` の「1.3」)
 - 完了確認・整合性チェックのために自前のスクリプトをその場で書かない。**必ず `validate_po.py` を使う**(apply_translations.py と同じ場所にある。フルパス例: `~/.claude/skills/wordpress-ja-translation-guide/scripts/validate_po.py`。即興チェックは表記ルール違反を拾えないうえ、チェック自体のバグでプレースホルダー欠落を見逃した実例がある)
 - スクリプトが利用できない環境では、1件ずつ逐次 `str_replace` で書き込む
