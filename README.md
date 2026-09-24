@@ -155,7 +155,7 @@ path/to/ja.po:17  (5 箇所)
 
 ### 分担パイプライン: po_chunk.py / po_collect.py / po_apply_loop.py
 
-未翻訳が数百件を超える `.po` を、複数の訳者(人でも AI でも)に分担して下訳させるための 3 本です。未翻訳の抽出とチャンク分割(`po_chunk.py`)、下訳 JSON の回収とドラフト段階の機械チェック(`po_collect.py`。プレースホルダー・終端記号・全角記号・HTML タグ・数値プレースホルダーのスペース)、`--list` 取り直し → apply → validate の直列適用(`po_apply_loop.py`)を担当します。訳者には `.po` を触らせず、チャンクファイルと訳語リストだけを渡す設計です。
+未翻訳が数百件を超える `.po` を、複数の訳者(人でも AI でも)に分担して下訳させるための 3 本です。未翻訳の抽出とチャンク分割(`po_chunk.py`)、下訳 JSON の回収とドラフト段階の機械チェック(`po_collect.py`。プレースホルダー・終端記号・全角記号・HTML タグ・数値プレースホルダーのスペース)、未翻訳一覧の取り直し(`--list` と同じ判定)→ apply → validate の直列適用(`po_apply_loop.py`)を担当します。訳者には `.po` を触らせず、チャンクファイルと訳語リストだけを渡す設計です。
 
 ```bash
 python scripts/po_chunk.py path/to/ja.po --outdir .work/plugin-x --ref path/to/core-ja-translated.po
