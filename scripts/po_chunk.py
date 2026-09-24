@@ -83,7 +83,6 @@ STOPWORDS = frozenset(
 )
 
 HOLD_MARKER = "[要確認"      # 未確定の訳の印。見本にしない(po_collect.py も同じ印を使う)
-PO_UNESCAPE = {'"': '"', "\\": "\\", "n": "\n", "t": "\t", "r": "\r", "0": "\0"}
 DEFAULT_SIZE = 30            # 1 チャンクの最大件数(理由は冒頭の docstring)
 DEFAULT_MAX_CHARS = 3000     # 1 チャンクの msgid 合計文字数の上限
 ID_PREVIEW_LEN = 30          # ドラフト JSON の "id"(msgid.strip() の先頭 N 文字)
@@ -104,27 +103,48 @@ KIND_ORDER = [
 # .po のコメント・種別
 # ---------------------------------------------------------------------------
 
-def unquote_po(line: str) -> str:
-    """`msgctxt "foo"` や継続行 `"foo"` の引用符の中身を、PO のエスケープを解いて返す。
+FIELD_RE = re.compile(r'^(msgctxt|msgid_plural|msgid|msgstr(?:\[\d+\])?)\s+"(.*)"$')
+CONT_RE = re.compile(r'^"(.*)"$')
 
-    解かないと `\\"` が 2 文字のまま entries.json と chunks/*.json に入る。コア訳には
-    `msgctxt "Adjective: e.g. \\"Comments are open\\""` のような文脈が実在し、エージェントが
-    JSON に素の引用符で書いた ctx と突き合わせたときに CTX_MISMATCH の誤検出になる。
+
+def po_fields(text: str):
+    """.po をフィールド単位で返す軽量パーサー。(行番号, 種別, 値) を順に yield する。
+
+    種別は "blank" / "comment"(値は行そのもの)/ "msgctxt" / "msgid" / "msgid_plural" /
+    "msgstr"(msgstr[N] も含む)。継続行(`"..."`)は直前のフィールドに連結し、行番号は
+    フィールドの開始行(msgstr なら `msgstr` の行 = apply_translations の msgstr_lineno)。
+    エスケープは apply_translations._unescape で解く(独自の表を持たない。表がずれると
+    chunks/*.json の msgctxt と _find_untranslated の msgid が食い違い、CTX_MISMATCH の誤検出になる)。
+
+    collect_comments()(対象 .po)と ref_msgctxts()(参照 .po)の両方がこれを使う。
     """
-    m = re.search(r'"(.*)"', line)
-    if not m:
-        return ""
-    raw = m.group(1)
-    out: list[str] = []
-    i = 0
-    while i < len(raw):
-        if raw[i] == "\\" and i + 1 < len(raw):
-            out.append(PO_UNESCAPE.get(raw[i + 1], raw[i + 1]))
-            i += 2
-        else:
-            out.append(raw[i])
-            i += 1
-    return "".join(out)
+    cur: list | None = None   # [lineno, kind, [values]]
+
+    def flush():
+        nonlocal cur
+        if cur is not None:
+            yield cur[0], cur[1], "".join(cur[2])
+            cur = None
+
+    for lineno, raw in enumerate(text.splitlines(), 1):
+        line = raw.strip()
+        if not line:
+            yield from flush()
+            yield lineno, "blank", ""
+            continue
+        m = CONT_RE.match(line)
+        if m and cur is not None:
+            cur[2].append(at._unescape(m.group(1)))
+            continue
+        yield from flush()
+        if line.startswith("#"):
+            yield lineno, "comment", line
+            continue
+        m = FIELD_RE.match(line)
+        if m:
+            kind = "msgstr" if m.group(1).startswith("msgstr") else m.group(1)
+            cur = [lineno, kind, [at._unescape(m.group(2))]]
+    yield from flush()
 
 
 def collect_comments(po_path: Path) -> dict[int, dict]:
@@ -136,50 +156,45 @@ def collect_comments(po_path: Path) -> dict[int, dict]:
     取り違えないため。msgid をキーにすると後のエントリーで上書きされ、location も msgctxt も
     別エントリーのものが付いてしまう。`apply_translations.py` の `_Entry.msgstr_linenos[0][0]`
     (単数形なら msgstr、複数形なら msgstr[0] の行)と突き合わせる。
+
+    エントリーの区切りは空行に加えて、「msgstr を記録したあとに来るコメント・msgctxt・msgid」。
+    空行で区切られていない .po では、次のエントリーのコメントが前のエントリーに混ざり、
+    msgctxt を引き継いだうえ translators / location を失っていた。
     """
     info: dict[int, dict] = {}
-    found = translators = location = ""
+    found = translators = location = ctxt = ""
     low = high = False
-    ctxt: list[str] = []
-    in_ctxt = False
     recorded = False
 
     def reset() -> None:
-        nonlocal found, translators, location, low, high, ctxt, in_ctxt, recorded
-        found = translators = location = ""
+        nonlocal found, translators, location, ctxt, low, high, recorded
+        found = translators = location = ctxt = ""
         low = high = False
-        ctxt = []
-        in_ctxt = False
         recorded = False
 
-    for lineno, raw in enumerate(po_path.read_text(encoding="utf-8").splitlines(), 1):
-        line = raw.strip()
-        if not line:
+    for lineno, kind, value in po_fields(po_path.read_text(encoding="utf-8")):
+        if kind == "blank":
             reset()
             continue
-        if line.startswith("#"):
-            # obsolete(#~)も fuzzy フラグもここを通す。エントリーの区切りは空行だけ
-            fm = FOUND_IN_RE.match(line)
+        if recorded and kind in ("comment", "msgctxt", "msgid"):
+            reset()          # 空行なしで次のエントリーが始まった
+        if kind == "comment":
+            # obsolete(#~)も fuzzy フラグもここを通す
+            fm = FOUND_IN_RE.match(value)
             if fm:
                 found = fm.group(1)
-            tm = TRANSLATORS_RE.match(line)
+            tm = TRANSLATORS_RE.match(value)
             if tm:
                 translators = tm.group(1)
-            if line.startswith("#:") and not location:
-                location = line[2:].strip()
-            if "gp-priority: low" in line:
+            if value.startswith("#:") and not location:
+                location = value[2:].strip()
+            if "gp-priority: low" in value:
                 low = True
-            if "gp-priority: high" in line:
+            if "gp-priority: high" in value:
                 high = True
-            continue
-        if line.startswith('"'):          # 直前のフィールドの継続行
-            if in_ctxt:
-                ctxt.append(unquote_po(line))
-            continue
-        in_ctxt = line.startswith("msgctxt")
-        if in_ctxt:
-            ctxt.append(unquote_po(line))
-        elif line.startswith("msgstr") and not recorded:
+        elif kind == "msgctxt":
+            ctxt = value
+        elif kind == "msgstr" and not recorded:
             # ブロック内で最初の msgstr 行(複数形なら msgstr[0])だけを記録する
             info[lineno] = {
                 "found": found,
@@ -187,7 +202,7 @@ def collect_comments(po_path: Path) -> dict[int, dict]:
                 "high": high,
                 "translators": translators,
                 "location": location,
-                "msgctxt": "".join(ctxt),
+                "msgctxt": ctxt,
             }
             recorded = True
     return info
@@ -358,28 +373,18 @@ def ref_msgctxts(text: str) -> dict[int, str]:
 
     validate_po.py は msgctxt を扱わない(PoEntry に項目が無い)ので、見本に文脈を添えるために
     ここで拾う。PoEntry.line は msgid 行の行番号なので、それをキーにすれば取り違えない。
+    解析は collect_comments() と同じ po_fields() を使う(msgctxt の扱いを 2 か所に持たない)。
     """
     out: dict[int, str] = {}
-    ctxt: list[str] = []
-    in_ctxt = False
-    for lineno, raw in enumerate(text.splitlines(), 1):
-        line = raw.strip()
-        if not line:
-            ctxt, in_ctxt = [], False
-            continue
-        if line.startswith("#"):
-            continue
-        if line.startswith('"'):          # 直前のフィールドの継続行
-            if in_ctxt:
-                ctxt.append(unquote_po(line))
-            continue
-        in_ctxt = line.startswith("msgctxt")
-        if in_ctxt:
-            ctxt.append(unquote_po(line))
-            continue
-        if line.startswith("msgid") and not line.startswith("msgid_plural"):
-            out[lineno] = "".join(ctxt)
-            ctxt = []
+    ctxt = ""
+    for lineno, kind, value in po_fields(text):
+        if kind == "blank":
+            ctxt = ""
+        elif kind == "msgctxt":
+            ctxt = value
+        elif kind == "msgid":
+            out[lineno] = ctxt
+            ctxt = ""
     return out
 
 
