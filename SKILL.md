@@ -44,7 +44,7 @@ WordPressプロジェクトが掲げる3つの執筆・翻訳指針:
 8. PHPのdateフォーマット文字列(`m/d/Y g:i:s A`など)はコードとして保持し、翻訳しない
 9. 省略記号はピリオド3個`...`ではなく三点リーダー`…`(U+2026)を使う(例: `読み込み中…`)。これは公式スタイルガイドの規定ではなく #ja-docs での合意(根拠と例外は references/notation-rules.md の 7)
 
-これらの詳細・例外・全例文は `references/notation-rules.md` を必ず参照すること(このSKILL.md本体には要点のみ記載)。
+このSKILL.md本体には要点のみ記載している。例外や判断に迷うケース(バージョン番号直後のスペース、`%s` の前後など)は `references/notation-rules.md` に全例文があるので、そこで確認する。
 
 ## 訳語選択・文体の統一ルール
 
@@ -104,14 +104,14 @@ msgstr "訳文の文字列"
 バッチ処理は以下のループを繰り返す:
 
 1. **バッチを作る直前に必ず `--list` を取り直す**。インデックスは呼び出しごとに未翻訳エントリーへ 0 から振り直されるため、書き込むたびにズレる。複数バッチ分の JSON を事前にまとめて作らない
-2. 20件ずつ訳文を生成し、msgid 照合付きのオブジェクト形式 JSON(`{"0": {"msgid": "原文", "msgstr": "訳文"}}`)を作る。ナレーションで「書いた」ことにしない——必ずスクリプトを呼び出してファイルに書き込む
+2. 20件ずつ訳文を生成し、msgid 照合付きのオブジェクト形式 JSON(`{"0": {"msgid": "原文", "msgstr": "訳文"}}`)を作り、スクリプトを呼び出してファイルに書き込む。書き込めたかどうかはスクリプトの出力(件数・WARN / ERROR)で判断する
 3. スクリプトが返す「◯/◯件完了、残り◯件」と WARN / ERROR を確認する(msgid やプレースホルダーが一致しないエントリーは書き込まれない)
 4. **バッチ適用のたびに `validate_po.py` を実行し、ERROR が出たら次のバッチに進む前に修正する**(フルパスで呼ぶ。例: `~/.claude/skills/wordpress-ja-translation-guide/scripts/validate_po.py path/to/ja.po`)
 5. 未翻訳が無くなるまで 1 に戻る
 
 補足:
 
-- 複数形(`msgid_plural`)エントリーも `--list` に `(plural)` 付きで表示され、書き込み対象になる(存在するすべての `msgstr[N]` に同じ訳文が入る)。旧バージョンのスクリプトでは対象外だったため、心配なら `grep -n msgid_plural path/to/ja.po` で漏れがないか確認する
+- 複数形(`msgid_plural`)エントリーも `--list` に `(plural)` 付きで表示され、書き込み対象になる(存在するすべての `msgstr[N]` に同じ訳文が入る。日本語は単数/複数を区別しないため)
 - `ALPHA_SPACING`(半角英字と全角文字の間のスペース漏れ)が大量に出た場合は、同じ場所の `fix_spacing.py` で機械挿入できる(`--apply` なしの dry-run で差分を確認 → `--apply` → `validate_po.py` で再検証。詳細は `references/contribution-workflow.md` の「1.3」)
 - 完了確認・整合性チェックのために自前のスクリプトをその場で書かない。**必ず `validate_po.py` を使う**(apply_translations.py と同じ場所にある。フルパス例: `~/.claude/skills/wordpress-ja-translation-guide/scripts/validate_po.py`。即興チェックは表記ルール違反を拾えないうえ、チェック自体のバグでプレースホルダー欠落を見逃した実例がある)
 - スクリプトが利用できない環境では、1件ずつ逐次 `str_replace` で書き込む
