@@ -9,10 +9,11 @@
     3. validate_po.py --errors-only を実行し、[ERROR] が出たら即中断
 
 送らないもの:
-    - msgctxt 違いで同じ msgid が複数の未翻訳エントリーにあるもの。プールは msgid をキーに
+    - msgctxt 違いで同じ msgid が複数のエントリーにあるもの。プールは msgid をキーに
       1 件しか持てず、どのエントリー向けか区別できないので、po_collect.py の manual.json と
-      同じく人間が --list の個別インデックスで 1 件ずつ適用する(この判定は .po の全未翻訳
-      エントリーで行う。po_chunk.py --skip-low で除外されたエントリーも数える)
+      同じく人間が --list の個別インデックスで 1 件ずつ適用する(この判定は .po の全エントリーで
+      行う。翻訳済みの変種や po_chunk.py --skip-low で除外されたエントリーも数える。片方を
+      手動で適用したあとの再実行で、残った方に黙って書き込まないため)
     - プールに訳文が無いもの([要確認] で hold に分離されたものなど)。先頭に何件並んでいても
       飛ばして、後ろのプール分を送る
     - 書き込めなかったエントリー(プレースホルダー不一致など)。その場で blocked.json に落として
@@ -25,7 +26,10 @@ apply が 1 件も書けず、書けなかった理由も個別に返ってこ�
 `.po` への書き込みは必ず apply_translations.py 経由で行い、このスクリプトは
 `.po` を直接編集しない。
 
-終了コード: 0 = 完了(送れるものを送り切った) / 2 = .po が読めない・apply が進まない・validate ERROR
+終了コード:
+    0 = 完了(送れるものを送り切った。送らなかったものは末尾に理由別で一覧)
+    2 = 中断(.po が読めない / apply が 1 件も書けない / validate が ERROR /
+        --max-batches に達したのに送れるエントリーが残っている)
 
 使い方:
     python /path/to/skill/scripts/po_apply_loop.py path/to/ja.po \\
@@ -45,10 +49,12 @@ import sys
 import tempfile
 from pathlib import Path
 
-# 同じディレクトリの Skill スクリプトを読み込む(未翻訳判定)・サブプロセスで呼ぶ(書き込み・validate)
+# 同じディレクトリの Skill スクリプトを読み込む(未翻訳判定・全エントリーの列挙)・
+# サブプロセスで呼ぶ(書き込み・validate)
 SCRIPTS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 import apply_translations as at  # noqa: E402
+import validate_po as vp  # noqa: E402
 
 # Windows の既定 stdout は cp932。apply_translations.py / validate_po.py の出力に
 # 含まれる絵文字をそのまま中継すると UnicodeEncodeError でループが落ちる。
@@ -56,10 +62,15 @@ for _stream in (sys.stdout, sys.stderr):
     if hasattr(_stream, "reconfigure"):
         _stream.reconfigure(encoding="utf-8", errors="replace")
 
-ERR_IDX_RE = re.compile(r"^\[ERROR\]\s*(?:\[\s*(\d+)\]|インデックス (\d+))")
+# apply_translations.py のエントリー単位のエラー。`[N] ...`、`インデックス N ...`、
+# `インデックス "N": ...`(JSON のキーをそのまま引用する形)のどれも拾う
+ERR_IDX_RE = re.compile(r'^\[ERROR\]\s*(?:\[\s*(\d+)\]|インデックス\s+"?(\d+)"?)')
 VALIDATE_ERR_RE = re.compile(r"^\[ERROR")
 PREVIEW_LEN = 80
 SKIP_SHOW = 10
+REASON_DUP = "msgctxt 違いで複数エントリーに一致(manual.json と同じく --list の個別インデックスで手動適用)"
+REASON_BLOCKED = "blocked(書き込めなかったもの。blocked.json)"
+REASON_NOPOOL = "プールに訳文が無い"
 
 
 def preview_of(s: str) -> str:
@@ -81,13 +92,21 @@ def positive_int(value: str) -> int:
     return n
 
 
-def load_entries(po_path: Path):
-    """未翻訳エントリーの一覧(--list と同じ判定・同じ順序)。読めなければ None。"""
+def load_po(po_path: Path):
+    """(未翻訳エントリーの一覧, 全エントリーの msgid の出現回数)。読めなければ None。
+
+    未翻訳の一覧は --list と同じ判定・同じ順序。出現回数は翻訳済みも含めた全エントリーで数える
+    (msgctxt 違いの判定に使う)。
+    """
     try:
-        return at._find_untranslated(at._read_lines(po_path))
-    except OSError as ex:
+        lines = at._read_lines(po_path)
+        text = "".join(lines)
+    except (OSError, UnicodeDecodeError) as ex:
         print("[ERROR] .po を読めません: %s" % ex)
         return None
+    untranslated = at._find_untranslated(lines)
+    counts = collections.Counter(e.msgid for e in vp.parse_po(text))
+    return untranslated, counts
 
 
 def main() -> int:
@@ -113,42 +132,41 @@ def main() -> int:
     blocked: set[str] = set(json.loads(blocked_path.read_text(encoding="utf-8"))) if blocked_path.is_file() else set()
 
     exit_code = 0
-    skipped: dict[str, list[tuple[int, str]]] = collections.defaultdict(list)   # 理由 -> [(index, msgid)]
-
-    for b in range(args.max_batches):
-        entries = load_entries(po_path)
-        if entries is None:
-            return 2
+    skipped: dict[str, list[tuple[int, str]]] = {}   # 最後に走査した時点の「送らなかったエントリー」(理由別)
+    loaded = load_po(po_path)
+    if loaded is None:
+        return 2
+    total = -1
+    for b in range(args.max_batches + 1):
+        entries, counts = loaded
         total = len(entries)
         if total == 0:
             print("=== 未翻訳エントリーなし。完了 ===")
             break
 
-        # msgctxt 違いで同じ msgid が複数あるかは、.po の全未翻訳エントリーで判定する
-        # (プールは msgid キーで 1 件しか持てないので、どのエントリー向けか区別できない)
-        dup = {mid for mid, c in collections.Counter(e.msgid for e in entries).items() if c >= 2}
-
+        # 一覧全体を走査して、送るもの(先頭から batch-size 件)と送らないもの(理由別)に分ける。
+        # 走査を打ち切らないのは、末尾の一覧に手動適用が必要な残件を漏らさず出すため
         batch: dict[str, dict[str, str]] = {}
         sent_by_idx: dict[int, str] = {}
         skipped = collections.defaultdict(list)
         for e in entries:
-            if len(batch) >= args.batch_size:
-                break
-            if e.msgid in dup:
-                skipped["msgctxt 違いで複数エントリーに一致(manual.json と同じく手動で適用)"].append((e.index, e.msgid))
-                continue
-            if e.msgid in blocked:
-                skipped["blocked"].append((e.index, e.msgid))
-                continue
-            mstr = pool.get(e.msgid)
-            if mstr is None:
-                skipped["プールに訳文が無い"].append((e.index, e.msgid))
-                continue
-            batch[str(e.index)] = {"msgid": e.msgid, "msgstr": mstr}
-            sent_by_idx[e.index] = e.msgid
+            if counts[e.msgid] >= 2:
+                skipped[REASON_DUP].append((e.index, e.msgid))
+            elif e.msgid in blocked:
+                skipped[REASON_BLOCKED].append((e.index, e.msgid))
+            elif e.msgid not in pool:
+                skipped[REASON_NOPOOL].append((e.index, e.msgid))
+            elif len(batch) < args.batch_size:
+                batch[str(e.index)] = {"msgid": e.msgid, "msgstr": pool[e.msgid]}
+                sent_by_idx[e.index] = e.msgid
 
         if not batch:
             print("=== batch %d: 送信できるエントリーがない。終了(残 %d 件) ===" % (b, total))
+            break
+        if b == args.max_batches:
+            print("=== --max-batches %d に達しました。送れるエントリーが残っています(残 %d 件)。再実行してください ==="
+                  % (args.max_batches, total))
+            exit_code = 2
             break
 
         fd, tmp = tempfile.mkstemp(suffix=".json")
@@ -179,11 +197,12 @@ def main() -> int:
             print("             msgid:", preview_of(mid))
 
         # 1 件も減らず、個別の理由も返ってこない = エントリーではなく書き込み自体の失敗。
-        # 送信分を blocked にすると原因を直したあとも再試行されないので、止めて人間に見せる
-        after = load_entries(po_path)
-        if after is None:
+        # 送信分を blocked にすると原因を直したあとも再試行されないので、止めて人間に見せる。
+        # 読み直した一覧は次バッチの入力として持ち越す(同じ .po を 2 回解析しない)
+        loaded = load_po(po_path)
+        if loaded is None:
             return 2
-        if len(after) == len(entries) and not newly_blocked:
+        if len(loaded[0]) == total and not newly_blocked:
             print("=== batch %d: apply が 1 件も書き込めませんでした。出力を確認してください ===" % b)
             for l in lines[-8:]:
                 print("   ", l)
@@ -211,7 +230,8 @@ def main() -> int:
     print("\nblocked: %d 件 -> %s" % (len(blocked), blocked_path))
     if blocked:
         print("blocked のエントリーは未翻訳のまま残ります。人間が個別に判断してください。")
-    print("次: validate_po.py をフルで実行し、WARN を目視確認 → 人間レビュー → 手動 Import")
+    if exit_code == 0:
+        print("次: validate_po.py をフルで実行し、WARN を目視確認 → 人間レビュー → 手動 Import")
     return exit_code
 
 

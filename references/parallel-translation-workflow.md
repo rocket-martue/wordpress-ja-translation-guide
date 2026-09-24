@@ -39,7 +39,7 @@
 |---|---|---|
 | `scripts/po_chunk.py` | ①→② | 未翻訳の抽出・種別分類・頻出語・チャンク分割・既存訳の見本と Project Glossary の添付・番号 → msgid 対応表 |
 | `scripts/po_collect.py` | ② | 下訳 JSON の回収・ドラフト段階の機械チェック・訳文プール作成・rework チャンク生成 |
-| `scripts/po_apply_loop.py` | ③ | `--list` 取り直し → apply → validate の直列ループ |
+| `scripts/po_apply_loop.py` | ③ | 未翻訳一覧の取り直し(`--list` と同じ判定)→ apply → validate の直列ループ |
 
 3 本とも SKILL.md と同じディレクトリ配下の `scripts/` にある(Claude Code の標準配置なら `~/.claude/skills/wordpress-ja-translation-guide/scripts/`)。役割・終了コード・下訳 JSON の形式・機械チェックの根拠は `contribution-workflow.md` 1.4 にまとめてあり、ここでは繰り返さない。
 
