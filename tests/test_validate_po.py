@@ -16,6 +16,7 @@
 """
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 import tempfile
@@ -257,6 +258,30 @@ class ValidateCliTest(unittest.TestCase):
             for check in validate_po._CHECKS:
                 emitted.update(v.rule_id for v in check(entry, Path("dummy.po")))
         self.assertLessEqual(emitted, validate_po.KNOWN_RULE_IDS)
+
+
+class RuleTableDocsTest(unittest.TestCase):
+    """ドキュメントのルール表が KNOWN_RULE_IDS と一致している (#24)。
+
+    ルール表は README.md と references/contribution-workflow.md の2か所にある。
+    ルールを足したときに片方だけ更新されてドリフトしたので、両方を実装と突き合わせる。
+    表の行は「| `RULE_ID` | ERROR/WARN | ...」の形であることを前提にする。
+    """
+
+    _ROW_RE = re.compile(r"^\|\s*`([A-Z_]+)`\s*\|\s*(?:ERROR|WARN)\s*\|", re.MULTILINE)
+
+    def _rule_ids_in(self, relpath: str) -> set[str]:
+        text = (REPO_ROOT / relpath).read_text(encoding="utf-8")
+        return set(self._ROW_RE.findall(text))
+
+    def test_readme_table_matches_known_rule_ids(self):
+        self.assertEqual(self._rule_ids_in("README.md"), set(validate_po.KNOWN_RULE_IDS))
+
+    def test_workflow_table_matches_known_rule_ids(self):
+        self.assertEqual(
+            self._rule_ids_in("references/contribution-workflow.md"),
+            set(validate_po.KNOWN_RULE_IDS),
+        )
 
 
 if __name__ == "__main__":
