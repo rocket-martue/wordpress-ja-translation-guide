@@ -96,7 +96,7 @@ from po_chunk import (  # noqa: E402
 
 HOLD_RE = re.compile(r"\s*\[要確認[^\]]*\]")
 FULLWIDTH_RE = re.compile(r"[！？（）：；]")
-# タグ名に `_` を許す。WooCommerce の `<custom_icon />`、Rank Math の `<settings_page_link/>` の
+# タグ名に `_` を許す。一部のプラグインには `<custom_icon />` や `<settings_page_link/>` の
 # ような擬似タグが実在し、除外すると原文・訳文の両方でトークンが 0 個になって
 # HTML_TAG の検査が素通りする(訳文がタグを落としても通ってしまう)
 TAG_TOKEN_RE = re.compile(r"<(/?)([A-Za-z][A-Za-z0-9_-]*)((?:\s[^<>]*?)?)(/?)>")

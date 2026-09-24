@@ -13,19 +13,19 @@ Skill の `apply_translations.py` の判定をそのまま使うので、ここ�
     chunk-meta.json       対象 .po と --ref の記録。po_collect.py が rework チャンクに同じ見本を付けるのに使う
 
 分割は「件数」と「msgid の合計文字数」の両方で切る(既定 30 件 / 3,000 字。どちらかに達したら次)。
-所要時間は思考トークン量で決まり、件数 549 tok/件・文字 2.64 tok/字 に加えて 1 本あたり約 11.7k tok(≈ 2 分)の
-固定費がある(実測)。件数の方が効くので件数側の上限を 30 件にしてある。件数だけで切ると changelog 十数件で
-8,000 字を超えるような重いチャンクができるので文字上限も要る。種別ごとにまとめてから切る。
+所要時間は件数と文字量の両方で決まり、1 本あたりの固定費もあるので、細かく割っても速くならない。
+件数の方が効くので件数側の上限を 30 件にしてある。件数だけで切ると changelog のような長文が集まったとき
+に重いチャンクができるので文字上限も要る。種別ごとにまとめてから切る。
 
 既存訳の見本(`ref:` 行)は翻訳済み .po から引く。対象 .po 自身と同じディレクトリの
 *-translated.po は自動で拾い、コア訳は --ref で足す:
     --ref path/to/core-ja-translated.po
-サブエージェントに .po を Grep させない代わりにここで添付する(.po を Grep させた走行は
-Grep なしの数倍かかった)。*-glossary.csv(GlotPress の Project Glossary エクスポート)が
+サブエージェントに .po を Grep させない代わりにここで添付する(.po を Grep しに行かせると
+1 本の所要が大きく延びる)。*-glossary.csv(GlotPress の Project Glossary エクスポート)が
 あればチャンク末尾に付ける。
 
 チャンクの msgid は `<<<MSGID` / `>>>MSGID` で囲む。改行を含む msgid を事故なく受け渡すための
-区切り。読み方は references/parallel-translation-workflow.md「チャンクファイルの形式」にある。
+区切り。訳者に渡すものと下訳 JSON の形式は references/contribution-workflow.md の 1.4 にある。
 
 使い方:
     python /path/to/skill/scripts/po_chunk.py path/to/ja.po \
@@ -194,7 +194,7 @@ def collect_comments(po_path: Path) -> dict[int, dict]:
 
 
 def kind_of(meta: dict) -> str:
-    """エントリーの種別タグ。エージェント定義の語尾表と対応する文字列を返す。"""
+    """エントリーの種別タグ。訳者が種別ごとに語尾を決めるための文字列を返す。"""
     if meta.get("low") and (not meta.get("found") or "changelog" in meta["found"]):
         return "changelog"
     kind = (meta.get("found") or "ui string").strip().rstrip(".").strip()
@@ -314,7 +314,7 @@ class RefIndex:
         """同じ msgctxt の完全一致を最優先し、無ければ近似・文脈違いの順にラベル付きで返す。
 
         ラベルの `~case` は大小文字・前後空白違い(`Add` に対する `add`)、`~ctxt` は msgctxt 違い。
-        どちらも製品ラベルの正典としては扱わない(エージェント定義に明記)。
+        どちらも製品ラベルの正典としては扱わない(訳者への指示でも参考扱いにする)。
         """
         i = self.exact.get((msgctxt, msgid))
         if i is not None:
@@ -386,7 +386,7 @@ def ref_msgctxts(text: str) -> dict[int, str]:
 def load_refs(paths: list[Path], po_path: Path, vp, quiet: bool = False) -> list[tuple[str, str, str, str]]:
     """翻訳済み .po から見本を集める。対象と同じディレクトリのものは [same-plugin]。
 
-    次の 2 つは見本にしない。エージェント定義が `[same-plugin]` を「製品固有ラベルの正典」と
+    次の 2 つは見本にしない。訳者への指示で `[same-plugin]` を「製品固有ラベルの正典」と
     書いている以上、確定していない訳をこのラベルで配ると下訳に伝播する。
 
     - `*-fuzzy.po`: GlotPress の fuzzy エクスポートには `#, fuzzy` が付かない(実ファイルで確認済み)
