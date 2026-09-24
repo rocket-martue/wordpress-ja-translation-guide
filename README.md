@@ -18,7 +18,7 @@ ja.wordpress.org 公式の[翻訳ハンドブック](https://ja.wordpress.org/te
 - 公式用語集の全エントリー(取得日時点のスナップショット)の収録と、Consistency Toolへの参照
 - 用語選択に確信が持てない箇所は `[要確認]` として明示し、断定しない
 - `.po`形式での出力フォーマットを維持
-- **一括翻訳ワークフロー**: `scripts/apply_translations.py` によるバッチ書き込みと、`scripts/validate_po.py` による機械チェックを組み合わせた大量翻訳の手順
+- **一括翻訳ワークフロー**: `scripts/apply_translations.py` によるバッチ書き込みと、`scripts/validate_po.py` による機械チェックを組み合わせた大量翻訳の手順。数百件規模を複数の訳者に分担するための `po_chunk.py` / `po_collect.py` / `po_apply_loop.py` も同梱
 
 詳細なルールと例は以下を参照してください:
 
@@ -79,7 +79,7 @@ python scripts/package_skill.py -o dist
 ### スクリプトがやっていること
 
 - `SKILL.md` の存在と、frontmatter(`name` / `description`)が正しく書かれているかを検証
-- `.git` / `.github` / `dist` / `__pycache__` / `CLAUDE.md` / `package_skill.py` / `update_glossary.py` など配布に不要なファイルを除外しつつ、リポジトリ全体を `wordpress-ja-translation-guide/` フォルダごとzip化(`scripts/` 内の `apply_translations.py`・`validate_po.py`・`fix_spacing.py` はSKILL.mdが参照するランタイムツールのため同梱)
+- `.git` / `.github` / `dist` / `__pycache__` / `CLAUDE.md` / `package_skill.py` / `update_glossary.py` など配布に不要なファイルを除外しつつ、リポジトリ全体を `wordpress-ja-translation-guide/` フォルダごとzip化(`scripts/` 内の `apply_translations.py`・`validate_po.py`・`fix_spacing.py`・`po_chunk.py`・`po_collect.py`・`po_apply_loop.py` はSKILL.mdや references が参照するランタイムツールのため同梱。`tests/` は除外)
 
 ### 用語集の更新: update_glossary.py
 
@@ -140,6 +140,26 @@ path/to/ja.po:17  (5 箇所)
 ```
 
 挿入するのは半角スペースだけで、訳語・文体の正しさは保証しません。`--apply` の後は必ず `validate_po.py` で再検証し、人間が目視レビューしてください。`msgid`・コメント・obsolete(`#~`)・ヘッダーエントリーには触れず、書き換え後に「スペース以外の内容が不変」「プレースホルダーの数・種類が不変」「HTMLタグ数が不変」を検証します。
+
+### 分担パイプライン: po_chunk.py / po_collect.py / po_apply_loop.py
+
+未翻訳が数百件を超える `.po` を、複数の訳者(人でも AI でも)に分担して下訳させるための 3 本です。未翻訳の抽出とチャンク分割(`po_chunk.py`)、下訳 JSON の回収とドラフト段階の機械チェック(`po_collect.py`。プレースホルダー・終端記号・全角記号・HTML タグ・数値プレースホルダーのスペース)、`--list` 取り直し → apply → validate の直列適用(`po_apply_loop.py`)を担当します。訳者には `.po` を触らせず、チャンクファイルと訳語リストだけを渡す設計です。
+
+```bash
+python scripts/po_chunk.py path/to/ja.po --outdir .work/plugin-x --ref path/to/core-ja-translated.po
+python scripts/po_collect.py --outdir .work/plugin-x
+python scripts/po_apply_loop.py path/to/ja.po --outdir .work/plugin-x
+```
+
+3 本とも `apply_translations.py` / `validate_po.py` と同じディレクトリに置く前提で、`.po` への書き込みは `apply_translations.py` 経由でしか行いません。手順と下訳 JSON の形式、機械チェックの一覧は [`references/contribution-workflow.md`](./references/contribution-workflow.md) の「1.4」を参照してください。適用が完了しても、人間による目視レビューと手動 Import は省略できません。
+
+### テスト
+
+```bash
+python -m unittest discover -s tests
+```
+
+`tests/` は標準ライブラリの unittest だけで動きます。`tests/orchestration/` には分担パイプラインの回帰テスト(過去に踏んだ壊れ方の再現。使い捨ての `.po` と作業ディレクトリでスクリプトを実際に走らせる)があり、`python tests/orchestration/run_all.py -v` で個別に確認できます。`scripts/` を変更したら通してください。
 
 ## 貢献
 

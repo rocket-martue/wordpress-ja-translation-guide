@@ -4,7 +4,7 @@
 
 ## 目次
 
-- 1. 翻訳作業の共通フロー / 1.1. apply_translations.py の使い方 / 1.2. validate_po.py の使い方 / 1.3. fix_spacing.py の使い方
+- 1. 翻訳作業の共通フロー / 1.1. apply_translations.py の使い方 / 1.2. validate_po.py の使い方 / 1.3. fix_spacing.py の使い方 / 1.4. 分担パイプライン(po_chunk.py / po_collect.py / po_apply_loop.py)
 - 2. 自動化してよい範囲 / してはいけない範囲
 
 ## 1. 翻訳作業の共通フロー
@@ -151,8 +151,63 @@ path/to/ja.po:17  (5 箇所)
 - 書き換え後に「スペース以外の内容が不変」「プレースホルダーの数・種類が不変」「HTMLタグ数が不変」を検証し、1つでも破れた箇所は書き換えずに `[ERROR]` 報告する
 - 終了コード: 0 = 対象なし / 1 = 対象あり(dry-run)・書き換え実施(`--apply`)/ 2 = エラー
 
+### 1.4. 分担パイプライン(po_chunk.py / po_collect.py / po_apply_loop.py)
+
+未翻訳が数百件を超えると、下訳を複数の訳者(人でも AI でも)に分担することになる。1.1 のバッチループを「準備(未翻訳の抽出と分割)」「回収(下訳の機械チェックとプール化)」「適用(`--list` → apply → validate の直列ループ)」に切り出したのが、この 3 本のスクリプト。場所は `apply_translations.py` と同じ `scripts/`(同じディレクトリのものを import・実行するので、3 本だけを別の場所へコピーしない)。
+
+| スクリプト | 役割 | 終了コード |
+|---|---|---|
+| `po_chunk.py` | 未翻訳エントリーの抽出(`apply_translations.py --list` と同じ判定)、種別分類(readme の header / paragraph / list item、changelog、UI 文字列)、30 件または msgid 合計 3,000 字ごとの分割、既存訳の見本(`ref:` 行)と Project Glossary(`*-glossary.csv`)の添付、番号 → msgid の対応表 | 0 = 成功 |
+| `po_collect.py` | 訳者が書いた下訳 JSON の回収、ドラフト段階の機械チェック(下表)、`pool.json`(適用対象)/ `hold.json`(`[要確認]` 付き)/ `manual.json`(msgctxt 違いで同じ msgid が複数あるもの)/ `missing.json`(未回収)/ `rework.json`(機械チェック NG)への振り分け、rework 用チャンクの生成 | 0 = 問題なし / 2 = 未回収あり / 3 = rework あり / 4 = ドラフトの形式エラー |
+| `po_apply_loop.py` | `pool.json` を 20 件ずつ、`--list` 取り直し → msgid 照合付き JSON → apply → `validate_po.py --errors-only` で直列適用。書き込めなかったエントリーは `blocked.json` に落として次バッチから外す | 0 = 完了 / 2 = validate が ERROR で中断 |
+
+```bash
+# ① 準備: 未翻訳を抽出してチャンクに分割(--ref は見本を引く翻訳済み .po。コア訳などを渡す)
+python ~/.claude/skills/wordpress-ja-translation-guide/scripts/po_chunk.py path/to/ja.po --outdir .work/plugin-x --ref path/to/core-ja-translated.po
+python ~/.claude/skills/wordpress-ja-translation-guide/scripts/po_chunk.py path/to/ja.po --outdir .work/plugin-x --skip-low   # gp-priority: low(changelog 等)を除外
+
+# ② 回収: 訳者が .work/plugin-x/drafts/translations_NN.json に書いた下訳を検証してプールにまとめる
+python ~/.claude/skills/wordpress-ja-translation-guide/scripts/po_collect.py --outdir .work/plugin-x
+
+# ③ 適用: プールを .po に直列で流し込む(.po への書き込みは apply_translations.py 経由)
+python ~/.claude/skills/wordpress-ja-translation-guide/scripts/po_apply_loop.py path/to/ja.po --outdir .work/plugin-x
+```
+
+訳者に渡すのは `chunks/chunk_NN.md`(1 エントリーが `### N [種別]` と `<<<MSGID` … `>>>MSGID` の形。`translators:` / `location:` / `ref:` 行と、末尾に Project Glossary が付く)と、プロジェクト共通の訳語リストだけ。**訳者に `.po` を触らせず、`apply_translations.py` のインデックスも渡さない**(インデックスは適用のたびに振り直されるので、生成と適用の間に時間差があると必ずズレる。チャンク内の番号 `N` は別物で、`po_collect.py` が `chunks/chunk_NN.json` で msgid に戻す)。
+
+訳者が書く下訳 JSON は、指定されたパスへ次の配列だけ:
+
+```json
+[
+  {"n": 1, "id": "Save changes", "msgstr": "変更を保存"},
+  {"n": 3, "id": "Active", "ctx": "Name for the CSS pseudo-class selector", "msgstr": "アクティブ"}
+]
+```
+
+`n` はチャンクの `### N` の番号、`id` は msgid の先頭 30 文字(番号ズレ検出用)、`ctx` はそのエントリーに `msgctxt:` 行があるときだけ。訳せなかったものも `[要確認: …]` 付きで出す(欠落させない。欠落は `missing.json` に残り exit 2 になる)。
+
+`po_collect.py` のドラフト段階の機械チェック(`validate_po.py` が apply 後にしか見ないものを、`.po` に入る前に弾く):
+
+| チェック | 内容 | 根拠 |
+|---|---|---|
+| `PH_MISMATCH` | プレースホルダーの数・種類(`validate_po.py` と同じ判定。番号付きへの並べ替えは通る) | SKILL.md「プレースホルダー」 |
+| `PH_NUM_SPACE` | `translators:` コメントから数値に置き換わると分かる `%s` 系プレースホルダーと日本語の間の半角スペース(`%2$s件中 %1$s件` → `%2$s件中%1$s件`)。`validate_po.py` の `NUM_SPACING` は `%d` 系しか見ない | notation-rules.md 6-1 |
+| `FULLWIDTH` | 全角記号 `！？（）：；` | notation-rules.md 1-2 |
+| `TERMINAL` | 終端記号は原文にあるものだけを写す。原文の `.` は「。」、`!` `?` は半角のまま直前に半角スペース、`:` は半角のまま、原文に無ければ付けない | word-choice-rules.md 2-8、notation-rules.md 1-2 / 1-4 |
+| `HTML_TAG` | HTML タグの種類・数・入れ子(翻訳対象の属性 `title` `alt` などは除いて比較) | SKILL.md「翻訳しないもの」 |
+| `ID_MISMATCH` / `CTX_MISMATCH` | `id` / `ctx` が対応表の msgid / msgctxt と食い違う(番号ズレ) | — |
+
+NG は `rework.json` に落ちて `chunks/rework_NN.md`(前回の下訳と NG の理由付き)が生成されるので、通常のチャンクと同じ手順で訳者に戻し、`po_collect.py` を再実行する。`hold.json` / `manual.json` / `blocked.json` に残ったものは人間が個別に判断する(`manual.json` は `apply_translations.py --list` の個別インデックスで 1 件ずつ適用する)。
+
+運用上の注意:
+
+- `drafts/` にドラフトが残っている作業ディレクトリでは `po_chunk.py` は止まる(作り直すと番号と msgid の対応が変わり、古いドラフトが別の msgid に付く)。作り直すなら `--force`(前世代を `backup-<時刻>/` に退避)か別の `--outdir`
+- 原文に `100% free` のような裸の `%` があると `% f` がプレースホルダーとして誤検出され、構造上書き込めない。`pool.json` には残るが apply で `blocked.json` に落ちるので、訳案を添えて人間に渡す
+- 3 本とも `.po` への書き込みは `apply_translations.py` をサブプロセスで呼ぶだけで、自前では書き戻さない
+- `po_apply_loop.py` が完走しても「人間レビュー → 手動 Import」は残る(2 節)。スクリプトの末尾もそう案内する
+
 ## 2. 自動化してよい範囲 / してはいけない範囲
 
-- 自動化してよい: 差分検出、下訳生成、バリデーションスクリプトの実行、アップロード用`.po`ファイルの組み立て
+- 自動化してよい: 差分検出、下訳生成、バリデーションスクリプトの実行、アップロード用`.po`ファイルの組み立て(1.4 の分担パイプラインもここに含まれる)
 - 自動化してはいけない: 人間レビューの省略、Import操作そのものを無人で実行すること(ファイルの内容を毎回ユーザー本人が確認した上で、手動でアップロードする)
 - **Importでどのステータスを選べる場合であっても**、人間レビューを経ずに即時反映してはいけない。「どうせ承認待ちだから精査しなくていい」という考え方もしない。未精査の機械翻訳を大量に投入すると、承認者の負担になり、提案が一括拒否される原因になる(ハンドブックに明記された機械翻訳の精査義務)
