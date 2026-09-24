@@ -110,11 +110,19 @@ python scripts/validate_po.py --errors-only path/to/ja.po
 | `FULLWIDTH_ALPHA` | WARN | 全角英字(Ａ-Ｚ、ａ-ｚ) |
 | `FULLWIDTH_PUNCT` | WARN | 全角感嘆符・疑問符(!?) |
 | `NUM_SPACING` | WARN | 数字・数値プレースホルダー(`%d`等)直後の不要なスペース |
+| `NUM_SPACING_TOKEN` | WARN | バージョン番号・識別子トークン直後のスペース(例: `PHP 8.1 以上`。公式に規定がない係争点) |
 | `ALPHA_SPACING` | WARN | 半角英字と全角文字の間に半角スペースがない(例: `担当者のFacebook`) |
 | `PUNCT_SPACING` | WARN | 日本語直後の `!` / `?` にスペースがない |
+| `ELLIPSIS` | WARN | 省略記号にピリオド3個を使っている(`読み込み中...` → `読み込み中…`。公式規定外の #ja-docs 合意) |
 | `WRITING_CONVENTION` | WARN | 「下さい」「全て」「既に」等の表記ゆれ |
 
 終了コードが `0` なら違反なし。`1` なら1件以上の違反あり(`--errors-only` と組み合わせてCI等に組み込む用途にも使えます)。
+
+`--ignore RULE` を付けると、指定したルールを表示・件数・終了コードのすべてから除外します。プロジェクトとして方針が決まっているルール(典型は `NUM_SPACING_TOKEN`)を抑制し、残りの WARN に集中したいときに使います。
+
+```bash
+python scripts/validate_po.py --ignore NUM_SPACING_TOKEN path/to/ja.po
+```
 
 ### スペースの自動挿入: fix_spacing.py
 
