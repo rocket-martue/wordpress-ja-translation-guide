@@ -17,7 +17,7 @@ ja.wordpress.org 公式[翻訳スタイルガイド](https://ja.wordpress.org/te
 
 既存の訳が存在するフレーズは統一することが望まれる。translate.wordpress.org の翻訳画面で3本線のメニューから「View original in consistency tool」を開くと、同じ原文の承認済み翻訳を一覧表示できる([Consistency Tool](https://translate.wordpress.org/consistency)へのショートカットも利用可能)。
 
-複数の訳語候補があってどれを選んでよいか分からない場合や、既存の訳が間違っていると思われる場合は、[Making WordPress の #ja-docs チャンネル](https://wordpress.slack.com/archives/C0B9ARKHWAY) で確認する(未参加の場合は [make.wordpress.org/chat](https://make.wordpress.org/chat/) から参加する。日本語コミュニティは2026年6月に無償版Slackから Make WordPress Slack へ[移行済み](https://ja.wordpress.org/team/2026/06/10/7051/))。Skillとして訳文を出す際は、この判断を勝手に行わず `[要確認]` を付けること。
+複数の訳語候補があってどれを選んでよいか分からない場合や、既存の訳が間違っていると思われる場合は、[Making WordPress の #ja-docs チャンネル](https://wordpress.slack.com/archives/C0B9ARKHWAY) で確認する(未参加の場合は [make.wordpress.org/chat](https://make.wordpress.org/chat/) から参加する)。Skillとして訳文を出す際は、この判断を勝手に行わず `[要確認]` を付けること。
 
 ## 2. 文体の具体ルール
 
