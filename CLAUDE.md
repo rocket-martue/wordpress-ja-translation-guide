@@ -25,7 +25,13 @@ wordpress-ja-translation-guide/
 │   ├── update_glossary.py             公式用語集を取得しglossary.mdを更新(.skillには同梱しない)
 │   ├── apply_translations.py          翻訳結果を.poへ反映するランタイムツール(.skillに同梱)
 │   ├── validate_po.py                 .poの規約違反チェックツール(.skillに同梱)
-│   └── fix_spacing.py                 半角英字と全角文字の間のスペースを機械挿入(.skillに同梱)
+│   ├── fix_spacing.py                 半角英字と全角文字の間のスペースを機械挿入(.skillに同梱)
+│   ├── po_chunk.py                    分担パイプライン①: 未翻訳の抽出・種別分類・チャンク分割・見本の添付(.skillに同梱)
+│   ├── po_collect.py                  分担パイプライン②: 下訳JSONの回収とドラフト段階の機械チェック(.skillに同梱)
+│   └── po_apply_loop.py               分担パイプライン③: --list → apply → validate の直列適用ループ(.skillに同梱)
+├── tests/                             開発用(.skillには同梱しない)。python -m unittest discover -s tests
+│   ├── test_cli.py / test_validate_po.py / test_orchestration.py
+│   └── orchestration/                 分担パイプラインの回帰テスト(自前ハーネス run_all.py + fixtures/)
 └── references/
     ├── notation-rules.md              全角半角・句読点・括弧・カギ括弧・カタカナ語・日付・プレースホルダー
     ├── word-choice-rules.md           訳語統一・文体・ブランド名・用語集の使い方
@@ -50,7 +56,8 @@ wordpress-ja-translation-guide/
   - 最終的な人間レビューを省略しない原則(SKILL.mdの「重要な注意」)
   - Import操作を無人で実行することを禁止する記述(references/contribution-workflow.md の「自動化してよい範囲 / してはいけない範囲」)
   これらを「簡潔にするため」「使いやすくするため」といった理由で削ったり弱めたりしない
-- **個人情報・案件固有の情報を埋め込まない**: このリポジトリは公開・共有を前提にしている。個人の名前・環境情報や、特定クライアント案件の情報などはSKILL.md/references/に書かない
+- **個人情報・案件固有の情報を埋め込まない**: このリポジトリは公開・共有を前提にしている。個人の名前・環境情報や、特定クライアント案件の情報などはSKILL.md/references/に書かない。スクリプトの docstring・コメントも同じ(翻訳作業リポジトリ側の実測値・プラグイン名・日付・Issue 番号は持ち込まず、結論と既定値だけを書く)
+- **`scripts/` を変更したら `python -m unittest discover -s tests` を通す**: `tests/orchestration/` は過去に踏んだ壊れ方の再現なので、分担パイプラインの不具合を直すときは再現するケースを先に足してから直す。3 本(`po_chunk.py` / `po_collect.py` / `po_apply_loop.py`)は同じディレクトリの `apply_translations.py` / `validate_po.py` を直接 import・実行する。private 関数(`_find_untranslated` / `_is_translated` / `_placeholders_compat` など)に依存しているので、それらを変えるときはこのテストで固定されていることを前提に扱う
 
 ## リリース手順
 

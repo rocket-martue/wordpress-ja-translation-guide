@@ -1,0 +1,45 @@
+# 合成フィクスチャ: コアの GlotPress エクスポートの形(msgctxt 付きエントリーを含む)を模した .po。
+# 同じ msgctxt を持つ未翻訳エントリー 4 件と翻訳済み 3 件を持つ。
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2026-01-01 00:00:00+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: GlotPress/4.1.0\n"
+"Language: ja_JP\n"
+"Project-Id-Version: Sample Core - Development\n"
+
+#: wp-includes/js/dist/upload-media.js:1
+msgid "This image could not be converted. Try converting it before uploading."
+msgstr "この画像は変換できませんでした。アップロードする前に変換してみてください。"
+
+#. translators: 1: number of files uploaded, 2: number of files in the batch.
+#: wp-includes/js/dist/editor.js:2
+msgid "Uploaded %1$d of %2$d"
+msgstr "アップロード済み %1$d / %2$d"
+
+#: wp-includes/js/dist/block-editor.js:10
+msgctxt "Name for the CSS pseudo-class selector"
+msgid "Active"
+msgstr ""
+
+#: wp-includes/js/dist/block-editor.js:11
+msgctxt "Name for the CSS pseudo-class selector"
+msgid "Focus-visible"
+msgstr ""
+
+#: wp-includes/js/dist/block-editor.js:12
+msgctxt "Name for the CSS pseudo-class selector"
+msgid "Focus"
+msgstr ""
+
+#: wp-includes/js/dist/block-editor.js:13
+msgctxt "Name for the CSS pseudo-class selector"
+msgid "Hover"
+msgstr ""
+
+#: wp-admin/includes/menu.php:3
+msgid "Sorry, you are not allowed to access this page."
+msgstr "このページにアクセスする権限がありません。"
