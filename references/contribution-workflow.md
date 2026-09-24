@@ -173,7 +173,7 @@ python ~/.claude/skills/wordpress-ja-translation-guide/scripts/po_collect.py --o
 python ~/.claude/skills/wordpress-ja-translation-guide/scripts/po_apply_loop.py path/to/ja.po --outdir .work/plugin-x
 ```
 
-訳者に渡すのは `chunks/chunk_NN.md`(1 エントリーが `### N [種別]` と `<<<MSGID` … `>>>MSGID` の形。`translators:` / `location:` / `ref:` 行と、末尾に Project Glossary が付く)と、プロジェクト共通の訳語リストだけ。**訳者に `.po` を触らせず、`apply_translations.py` のインデックスも渡さない**(インデックスは適用のたびに振り直されるので、生成と適用の間に時間差があると必ずズレる。チャンク内の番号 `N` は別物で、`po_collect.py` が `chunks/chunk_NN.json` で msgid に戻す)。
+訳者に渡すのは `chunks/chunk_NN.md`(1 エントリーが `### N [種別]` と `<<<MSGID` … `>>>MSGID` の形。`translators:` / `location:` / `ref:` 行と、末尾に Project Glossary が付く)と、プロジェクト共通の訳語リスト(`glossary-template.md` の型)だけ。訳者が Claude Code のサブエージェントなら、配り方・回収・仕上げの手順は `parallel-translation-workflow.md` にある。**訳者に `.po` を触らせず、`apply_translations.py` のインデックスも渡さない**(インデックスは適用のたびに振り直されるので、生成と適用の間に時間差があると必ずズレる。チャンク内の番号 `N` は別物で、`po_collect.py` が `chunks/chunk_NN.json` で msgid に戻す)。
 
 訳者が書く下訳 JSON は、指定されたパスへ次の配列だけ:
 
