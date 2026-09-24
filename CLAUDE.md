@@ -32,11 +32,16 @@ wordpress-ja-translation-guide/
 ├── tests/                             開発用(.skillには同梱しない)。python -m unittest discover -s tests
 │   ├── test_cli.py / test_validate_po.py / test_orchestration.py
 │   └── orchestration/                 分担パイプラインの回帰テスト(自前ハーネス run_all.py + fixtures/)
+├── assets/
+│   └── agents/
+│       └── po-draft-translator.md     下訳専用サブエージェントの定義テンプレ(利用者が ~/.claude/agents/ にコピーする。.skillに同梱)
 └── references/
     ├── notation-rules.md              全角半角・句読点・括弧・カギ括弧・カタカナ語・日付・プレースホルダー
     ├── word-choice-rules.md           訳語統一・文体・ブランド名・用語集の使い方
     ├── glossary.md                    公式用語集のスナップショット(表部分はupdate_glossary.pyが自動生成)
-    └── contribution-workflow.md       一括翻訳ワークフローとスクリプトの使い方
+    ├── contribution-workflow.md       一括翻訳ワークフローとスクリプトの使い方(1.4 が分担パイプライン)
+    ├── parallel-translation-workflow.md  Claude Code でサブエージェントに下訳を分担させる手順(Claude Code 限定のオプション)
+    └── glossary-template.md           分担翻訳の前に作る共通訳語リストの型
 ```
 
 ## 用語集(references/glossary.md)の扱い
@@ -49,12 +54,14 @@ wordpress-ja-translation-guide/
 
 - **一次情報は常に公式ページ**: ルールを追加・変更する際は、必ず ja.wordpress.org の公式ハンドブック・スタイルガイドの該当ページを確認してから反映する。記憶や推測で書き足さない
 - **SKILL.mdは要点のみ**: 本体は500行程度を目安に収め、詳細・例文は `references/` に逃がす(progressive disclosure)。SKILL.mdに新しい詳細ルールを書きたくなったら、まず references/ のどのファイルに属すか考える
+- **並列モードは Claude Code 限定のオプションとして書く**: `.skill` は Claude.ai(Desktop / Cowork)にも配るが、そこでは Agent ツールもエージェント定義の自動登録も無い。SKILL.md の直列ループを削らず、並列は「使えるなら」の追加として書く。Skill 単体にサブエージェント定義を同梱して自動登録させることはできない(それができるのはプラグインだけ)ので、`assets/agents/` はコピーして使うテンプレとして扱う
 - **references/ が300行を超えたら目次を付ける**: 現状はまだ収まっているが、増えてきたら冒頭に目次を追加する
 - **核となる安全装置は絶対に弱めない**:
   - 「機械翻訳の精査義務」(SKILL.mdの最重要セクション)
   - 自信のない訳語を `[要確認]` として明示し、断定しない運用
   - 最終的な人間レビューを省略しない原則(SKILL.mdの「重要な注意」)
   - Import操作を無人で実行することを禁止する記述(references/contribution-workflow.md の「自動化してよい範囲 / してはいけない範囲」)
+  - サブエージェントに `.po` を書かせない・`apply_translations.py` のインデックスを渡さない・`.po` を読ませない、の 3 点(SKILL.md「Claude Code でサブエージェントに下訳を分担させる場合」、references/parallel-translation-workflow.md、assets/agents/po-draft-translator.md「役割の境界」)
   これらを「簡潔にするため」「使いやすくするため」といった理由で削ったり弱めたりしない
 - **個人情報・案件固有の情報を埋め込まない**: このリポジトリは公開・共有を前提にしている。個人の名前・環境情報や、特定クライアント案件の情報などはSKILL.md/references/に書かない。スクリプトの docstring・コメントも同じ(翻訳作業リポジトリ側の実測値・プラグイン名・日付・Issue 番号は持ち込まず、結論と既定値だけを書く)
 - **`scripts/` を変更したら `python -m unittest discover -s tests` を通す**: `tests/orchestration/` は過去に踏んだ壊れ方の再現なので、分担パイプラインの不具合を直すときは再現するケースを先に足してから直す。3 本(`po_chunk.py` / `po_collect.py` / `po_apply_loop.py`)は同じディレクトリの `apply_translations.py` / `validate_po.py` を直接 import・実行する。private 関数(`_find_untranslated` / `_is_translated` / `_placeholders_compat` など)に依存しているので、それらを変えるときはこのテストで固定されていることを前提に扱う
