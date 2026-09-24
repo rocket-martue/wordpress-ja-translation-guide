@@ -99,7 +99,7 @@ msgstr "訳文の文字列"
 
 生の `.po` 構文に `str_replace` で直接書き込もうとしない。`msgstr ""` が大量に重複するため一意に特定できず、置換失敗やリトライが発生する。
 
-代わりに `scripts/apply_translations.py` 経由で書き込む。このスクリプトは**Skillと一緒にインストール済み**——Claude Code なら `~/.claude/skills/wordpress-ja-translation-guide/scripts/apply_translations.py` に既に存在する(翻訳対象プロジェクトのディレクトリには無いので、フルパスで呼び出す。リポジトリを別途クローンする必要はない)。実行には **Python 3.10 以上**が必要。
+代わりに `scripts/apply_translations.py` 経由で書き込む。スクリプトは Skill の一部として配布されていて、**この SKILL.md と同じディレクトリ配下の `scripts/` にある**(翻訳対象プロジェクトのディレクトリには無いので、Skill の場所からのフルパスで呼び出す。リポジトリを別途クローンする必要はない。Claude Code の標準配置なら `~/.claude/skills/wordpress-ja-translation-guide/scripts/apply_translations.py`)。実行には **Python 3.10 以上**が必要。
 
 バッチ処理は以下のループを繰り返す:
 
