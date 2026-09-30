@@ -40,7 +40,7 @@
 
 <!-- glossary:begin -->
 <!-- ここから下は scripts/update_glossary.py が自動生成します。手で編集しないでください。 -->
-<!-- 取得日: 2026-07-28 / 収録件数: 278件 -->
+<!-- 取得日: 2026-09-30 / 収録件数: 278件 -->
 
 | 英語 | 品詞 | 日本語訳 | 補足 |
 |---|---|---|---|
@@ -307,7 +307,7 @@
 | update | verb | 更新する |  |
 | upgrade | noun | アップグレード |  |
 | uploader | noun | アップローダー |  |
-| URI | noun | URL |  |
+| URI | noun | URI | 対象読者、文脈によっては「URL」も可。 |
 | user | noun | ユーザー |  |
 | valid | adjective | 有効 |  |
 | valid | adjective | 正しい |  |
