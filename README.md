@@ -1,5 +1,7 @@
 # wordpress-ja-translation-guide
 
+日本語 | [English](./README.en.md)
+
 WordPress コア・プラグイン・テーマの文字列を日本語に翻訳する際に、[ja.wordpress.org 公式の翻訳スタイルガイド](https://ja.wordpress.org/team/handbook/translation/) に沿った表記を保つための [Claude Skill](https://www.anthropic.com/news/skills) です。
 
 `.po` / `.pot` ファイルの翻訳、既存の日本語訳のレビュー、[translate.wordpress.org](https://translate.wordpress.org/) への提案やPTE(Project Translation Editor)としてのインポート前チェックなど、WordPress日本語ローカライズ作業全般で利用できます。
