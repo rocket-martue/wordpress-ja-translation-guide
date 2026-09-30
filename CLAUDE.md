@@ -15,6 +15,7 @@ wordpress-ja-translation-guide/
 ├── CLAUDE.md                          このファイル(配布物には含めない)
 ├── SKILL.md                           トリガー条件 + 要点のみ
 ├── README.md                          利用者向け説明(インストール・ビルド手順)
+├── README.en.md                       README.md の英語要約版(開発者向けの詳細は README.md へリンク)
 ├── LICENSE                            GPL-2.0-or-later
 ├── .gitattributes                     GitHubのSource zipからCLAUDE.md等を除外(export-ignore)
 ├── .github/
@@ -55,6 +56,7 @@ wordpress-ja-translation-guide/
 - **一次情報は常に公式ページ**: ルールを追加・変更する際は、必ず ja.wordpress.org の公式ハンドブック・スタイルガイドの該当ページを確認してから反映する。記憶や推測で書き足さない
 - **SKILL.mdは要点のみ**: 本体は500行程度を目安に収め、詳細・例文は `references/` に逃がす(progressive disclosure)。SKILL.mdに新しい詳細ルールを書きたくなったら、まず references/ のどのファイルに属すか考える
 - **並列モードは Claude Code 限定のオプションとして書く**: `.skill` は Claude.ai(Desktop / Cowork)にも配るが、そこでは Agent ツールもエージェント定義の自動登録も無い。SKILL.md の直列ループを削らず、並列は「使えるなら」の追加として書く。Skill 単体にサブエージェント定義を同梱して自動登録させることはできない(それができるのはプラグインだけ)ので、`assets/agents/` はコピーして使うテンプレとして扱う
+- **README.md を変えたら README.en.md の対応箇所も見る**: 英語版は要約版なので 1 対 1 では訳さない。概要・反映しているルール・使い方・注意事項に関わる変更は英語版にも反映し、開発者向けの細部(スクリプトのオプション・ルール表など)は README.md へのリンクで済ませる
 - **references/ が300行を超えたら目次を付ける**: 現状はまだ収まっているが、増えてきたら冒頭に目次を追加する
 - **核となる安全装置は絶対に弱めない**:
   - 「機械翻訳の精査義務」(SKILL.mdの最重要セクション)
