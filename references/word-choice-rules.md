@@ -75,7 +75,7 @@ ja.wordpress.org 公式[翻訳スタイルガイド](https://ja.wordpress.org/te
 - **機能名**: 用語集に従う。コア内の新しい用語は Making WordPress の #ja-docs チャンネルで話し合って確定するものであり、Skillが独自に確定させてはいけない
 - **テーマ名・プラグイン名**: 例えば "Twenty Twenty" などのテーマ名は翻訳しない。プラグイン名も同様に未翻訳のままにする
 - **用語集で英語のままと決まっているもの**: `Gutenberg` `BuddyPress` `Classic Editor`(プラグイン名の場合) `Press This` `Transient` `nonce` `Cookie` `WordCamp` `Subversion` `RSS` `XML-RPC` `After the Deadline` など。カタカナに開かず原語のまま残す(全リストは `references/glossary.md`)
-- **表記が指定されているもの**: `web server` は「Web サーバー」(文頭でなくても W は大文字)、`URI` は「URL」、`Two-Factor Authentication` は「2要素認証」(漢数字にしない)
+- **表記が指定されているもの**: `web server` は「Web サーバー」(文頭でなくても W は大文字)、`URI` は「URI」(対象読者や文脈によっては「URL」も可)、`Two-Factor Authentication` は「2要素認証」(漢数字にしない)
 
 ## 4. 用語集で決まっている定型表現
 
