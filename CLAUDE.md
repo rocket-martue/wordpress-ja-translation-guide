@@ -12,7 +12,7 @@ SKILL.md と references/ 一式を `.skill`(zip)としてパッケージ化し�
 
 ```
 wordpress-ja-translation-guide/
-├── CLAUDE.md                          このファイル(配布物には含めない)
+├── CLAUDE.md                          このファイル(リリースには含めない)
 ├── SKILL.md                           トリガー条件 + 要点のみ
 ├── README.md                          利用者向け説明(インストール・ビルド手順)
 ├── README.en.md                       README.md の英語要約版(開発者向けの詳細は README.md へリンク)
@@ -80,4 +80,4 @@ wordpress-ja-translation-guide/
 
 - `dist/` や `*.skill` をリポジトリにコミットする(ビルド成果物のため `.gitignore` で除外している)
 - 公式ページの裏取りなしに、翻訳ルールを推測で追加・変更する
-- `CLAUDE.md` を配布物に含める(`.skill` は `scripts/package_skill.py` の除外リスト、GitHub の Source code (zip/tar.gz) は `.gitattributes` の `export-ignore` で対応済み。どちらを編集する際もこの方針を維持する)
+- `CLAUDE.md` をリリースに含める(`.skill` は `scripts/package_skill.py` の除外リスト、GitHub の Source code (zip/tar.gz) は `.gitattributes` の `export-ignore` で対応済み。どちらを編集する際もこの方針を維持する)
