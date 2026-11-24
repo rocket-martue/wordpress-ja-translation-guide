@@ -58,9 +58,29 @@ Detailed rules and examples are in `references/` (in Japanese):
 
 Get `wordpress-ja-translation-guide.skill` from the [Releases](../../releases) page of this repository (or from a file shared with you) and install it in Claude.
 
+### Installing as a Claude Code plugin
+
+This repository also works as a Claude Code plugin (and as its own marketplace). The plugin registers the Skill and the draft-only subagent automatically. Run these in Claude Code:
+
+```
+/plugin marketplace add rocket-martue/wordpress-ja-translation-guide
+/plugin install wordpress-ja-translation-guide@wordpress-ja-translation-guide
+```
+
+On Claude Code 2.1.275 or later, one line is enough:
+
+```
+/plugin install wordpress-ja-translation-guide --marketplace rocket-martue/wordpress-ja-translation-guide
+```
+
+- Installed as a plugin, the Skill is named `wordpress-ja-translation-guide:wordpress-ja-translation-guide` and the subagent `wordpress-ja-translation-guide:po-draft-translator` (the plugin name is prefixed)
+- The plugin has no version number; updates follow commits
+- Do not combine the plugin with the `.skill` file or a copy in your Skills directory, or the Skill and the subagent are registered twice
+- The plugin has been checked in Claude Code. On Claude.ai (Desktop / Cowork), use the `.skill` file above
+
 ### Using parallel subagents in Claude Code
 
-For a `.po` file with many untranslated strings, you can let subagents generate draft translations in parallel. The main agent still writes to the `.po` file and runs validation one step at a time. The draft-only agent definition [`assets/agents/po-draft-translator.md`](./assets/agents/po-draft-translator.md) is included, but a Skill cannot register it automatically, so copy it once to your Claude Code agents directory:
+For a `.po` file with many untranslated strings, you can let subagents generate draft translations in parallel. The main agent still writes to the `.po` file and runs validation one step at a time. The draft-only agent definition [`assets/agents/po-draft-translator.md`](./assets/agents/po-draft-translator.md) is included. The plugin registers it automatically. If you installed the `.skill` file or put the folder in your Skills directory, a Skill cannot register it, so copy it once to your Claude Code agents directory:
 
 ```bash
 cp ~/.claude/skills/wordpress-ja-translation-guide/assets/agents/po-draft-translator.md ~/.claude/agents/

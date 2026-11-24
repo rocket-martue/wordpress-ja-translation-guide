@@ -41,7 +41,7 @@
 | `scripts/po_collect.py` | ② | 下訳 JSON の回収・ドラフト段階の機械チェック・訳文プール作成・rework チャンク生成 |
 | `scripts/po_apply_loop.py` | ③ | 未翻訳一覧の取り直し(`--list` と同じ判定)→ apply → validate の直列ループ |
 
-3 本とも SKILL.md と同じディレクトリ配下の `scripts/` にある(Claude Code の標準配置なら `~/.claude/skills/wordpress-ja-translation-guide/scripts/`)。役割・終了コード・下訳 JSON の形式・機械チェックの根拠は `contribution-workflow.md` 1.4 にまとめてあり、ここでは繰り返さない。
+3 本とも SKILL.md と同じディレクトリ配下の `scripts/` にある(Claude Code の標準配置なら `~/.claude/skills/wordpress-ja-translation-guide/scripts/`。プラグインとして入れた場合は、プラグインのインストール先が Skill の場所になるので、以下のコマンド例のパスを読み替える)。役割・終了コード・下訳 JSON の形式・機械チェックの根拠は `contribution-workflow.md` 1.4 にまとめてあり、ここでは繰り返さない。
 
 作業ディレクトリは翻訳対象プロジェクト側に `.work/{slug}/` のように作る。UI と readme で分け(`.work/{slug}-ui` / `.work/{slug}-readme`)、同じファイルの 2 回目以降は日付などを付けて別にする。`drafts/` にドラフトが残る作業ディレクトリでは `po_chunk.py` が止まる(番号と msgid の対応が変わり、古いドラフトが別の msgid に付くため)ので、毎回新しい `--outdir` にするか `--force` で前世代を退避する。中間成果物をコミットするかどうかはプロジェクトの方針に従う(人間が下訳を直接レビューできる証跡になる)。
 
@@ -72,11 +72,16 @@
 
 ### 4.1. エージェント定義
 
-下訳専用のサブエージェント定義を `assets/agents/po-draft-translator.md` として同梱している。Skill 単体ではエージェント定義を自動登録できないので、Claude Code で使うときは一度だけコピーする:
+下訳専用のサブエージェント定義を `assets/agents/po-draft-translator.md` として同梱している。登録のしかたとエージェント名は、Skill の入れ方で変わる:
 
-```bash
-cp ~/.claude/skills/wordpress-ja-translation-guide/assets/agents/po-draft-translator.md ~/.claude/agents/
-```
+- **Claude Code のプラグインとして入れた場合**: 定義は自動で登録される。コピーは要らない。エージェント名は、プラグイン名が前に付いた `wordpress-ja-translation-guide:po-draft-translator`
+- **`.skill` として入れた・Skills ディレクトリに置いた場合**: Skill 単体ではエージェント定義を自動登録できないので、一度だけコピーする。エージェント名は `po-draft-translator`
+
+  ```bash
+  cp ~/.claude/skills/wordpress-ja-translation-guide/assets/agents/po-draft-translator.md ~/.claude/agents/
+  ```
+
+呼び出すときは、Agent ツールの一覧に見えている名前をそのまま使う。両方の入れ方を併用すると Skill とエージェントが二重に登録されるので、どちらか一方にする。
 
 定義は `tools: Read, Grep, Glob, Write`(`.po` に書けない・apply を実行できない)、`model: sonnet`、`effort: medium`、`skills: [wordpress-ja-translation-guide]`(SKILL.md をプリロード)。役割の境界・読んでよいもの・種別タグと語尾・出力 JSON 形式・返答の形は定義が持つ。**呼び出し時のプロンプトで繰り返さない**(書き直すたびに抜けが出る)。
 
@@ -86,12 +91,13 @@ cp ~/.claude/skills/wordpress-ja-translation-guide/assets/agents/po-draft-transl
 
 ### 4.2. 呼び出し方
 
-各チャンクをサブエージェントに渡す。**Agent 呼び出しは 1 つの応答に全チャンク分をまとめて出す**(1 本ずつ別の応答で投げると直列になる)。同時実行数の上限を超える分は最初の波が返ってから次の波を出す。渡すものは 4 点だけ:
+各チャンクをサブエージェントに渡す。**Agent 呼び出しは 1 つの応答に全チャンク分をまとめて出す**(1 本ずつ別の応答で投げると直列になる)。同時実行数の上限を超える分は最初の波が返ってから次の波を出す。渡すものは 5 点だけ:
 
 1. **チャンクファイルのパス**(`.work/{slug}/chunks/chunk_NN.md`)。msgid をプロンプト本文に貼らない
 2. **共通訳語リストのパス**
 3. **下訳 JSON の書き込み先パス**(`.work/{slug}/drafts/translations_NN.json`)。**チャンクごとに必ず別パス**を割り当て、既存ファイルのあるパスは再利用しない
-4. プロジェクト固有の注意があれば 2〜3 行(製品名の扱い、画面の種類など)
+4. **Skill の `references/` ディレクトリの絶対パス**(SKILL.md と同じディレクトリ配下)。場所は Skill の入れ方で変わり、サブエージェントからは分からないので、メインが自分の読み込んだ Skill の場所から渡す
+5. プロジェクト固有の注意があれば 2〜3 行(製品名の扱い、画面の種類など)
 
 「`.po` を読んで既存訳に揃えろ」とは書かない(見本は `ref:` 行として添付済み。書くと `.po` を Grep しに行く)。訳文本体はレスポンスに返させず、**JSON ファイルを正**とする。返答は書き込んだパス・件数・`[要確認]` 件数の要約だけにする。
 

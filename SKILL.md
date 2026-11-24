@@ -99,7 +99,7 @@ msgstr "訳文の文字列"
 
 生の `.po` 構文に `str_replace` で直接書き込もうとしない。`msgstr ""` が大量に重複するため一意に特定できず、置換失敗やリトライが発生する。
 
-代わりに `scripts/apply_translations.py` 経由で書き込む。スクリプトは Skill の一部として配布されていて、**この SKILL.md と同じディレクトリ配下の `scripts/` にある**(翻訳対象プロジェクトのディレクトリには無いので、Skill の場所からのフルパスで呼び出す。リポジトリを別途クローンする必要はない。Claude Code の標準配置なら `~/.claude/skills/wordpress-ja-translation-guide/scripts/apply_translations.py`)。実行には **Python 3.10 以上**が必要。
+代わりに `scripts/apply_translations.py` 経由で書き込む。スクリプトは Skill の一部として配布されていて、**この SKILL.md と同じディレクトリ配下の `scripts/` にある**(翻訳対象プロジェクトのディレクトリには無いので、Skill の場所からのフルパスで呼び出す。リポジトリを別途クローンする必要はない。Claude Code の標準配置なら `~/.claude/skills/wordpress-ja-translation-guide/scripts/apply_translations.py`。プラグインとして入れた場合は、プラグインのインストール先が Skill の場所になるので、以下の例のパスを読み替える)。実行には **Python 3.10 以上**が必要。
 
 バッチ処理は以下のループを繰り返す:
 
@@ -130,7 +130,7 @@ msgstr "訳文の文字列"
 - **サブエージェントに `apply_translations.py` のインデックスを渡さない**。インデックスは適用のたびに振り直されるので、生成と適用の間に時間差があると必ずズレる。適用時のインデックスはメインが直前の `--list` で毎回引き直す
 - **サブエージェントに `.po` を読ませない**。既存訳の見本は `po_chunk.py` がチャンクに添付する
 
-下訳専用のエージェント定義は `assets/agents/po-draft-translator.md` に同梱している(Skill 単体では自動登録されないので、Claude Code では `~/.claude/agents/` に一度コピーする。README 参照)。定義が無ければ `general-purpose` サブエージェントに `model: sonnet` で同じファイルを読ませて代用してよいが、ツール制限と `effort` は効かないので「`.po` を書かない・読まない」をプロンプトで明示する。
+下訳専用のエージェント定義は `assets/agents/po-draft-translator.md` に同梱している。Claude Code のプラグインとして入れた場合は自動で登録され、エージェント名は `wordpress-ja-translation-guide:po-draft-translator` になる。`.skill` として入れた場合は Skill 単体では自動登録されないので、`~/.claude/agents/` に一度コピーして `po-draft-translator` の名前で使う(README 参照)。呼び出すときは Agent ツールの一覧に見えている名前を使う。定義が無ければ `general-purpose` サブエージェントに `model: sonnet` で同じファイルを読ませて代用してよいが、ツール制限と `effort` は効かないので「`.po` を書かない・読まない」をプロンプトで明示する。
 
 並列化して速くなるのは下訳までで、**完了しても人間レビューと手動 Import は残る**。「これで完成」と断定せず、最後に必ずその旨を伝える。
 
