@@ -6,7 +6,7 @@
 
 [ja.wordpress.org 公式の翻訳ハンドブック](https://ja.wordpress.org/team/handbook/translation/)・[翻訳スタイルガイド](https://ja.wordpress.org/team/handbook/translation/translation-style-guide/)を反映した Claude Skill (`wordpress-ja-translation-guide`) のソースリポジトリです。
 
-SKILL.md と references/ 一式を `.skill`(zip)としてパッケージ化し、Claude.ai または Claude Code にインストールして、WordPressプラグイン/テーマ/コアの日本語翻訳作業を支援するために使います。
+SKILL.md と references/ 一式を `.skill`(zip)としてパッケージ化し、Claude.ai または Claude Code にインストールして、WordPressプラグイン/テーマ/コアの日本語翻訳作業を支援するために使います。同じリポジトリを、Claude Code のプラグイン(とそのマーケットプレイス)としても読み込めます。
 
 ## ディレクトリ構成と各ファイルの役割
 
@@ -18,6 +18,9 @@ wordpress-ja-translation-guide/
 ├── README.en.md                       README.md の英語要約版(開発者向けの詳細は README.md へリンク)
 ├── LICENSE                            GPL-2.0-or-later
 ├── .gitattributes                     GitHubのSource zipからCLAUDE.md等を除外(export-ignore)
+├── .claude-plugin/                    Claude Code プラグインとして配るためのマニフェスト(.skillには同梱しない)
+│   ├── plugin.json                    プラグインの定義。agents で assets/agents/ のファイルを名指しする
+│   └── marketplace.json               このリポジトリをマーケットプレイスとして公開する定義(source は "./")
 ├── .github/
 │   └── workflows/
 │       └── release.yml                タグpush時に.skillをビルドしReleaseへ自動添付
@@ -31,11 +34,11 @@ wordpress-ja-translation-guide/
 │   ├── po_collect.py                  分担パイプライン②: 下訳JSONの回収とドラフト段階の機械チェック(.skillに同梱)
 │   └── po_apply_loop.py               分担パイプライン③: --list → apply → validate の直列適用ループ(.skillに同梱)
 ├── tests/                             開発用(.skillには同梱しない)。python -m unittest discover -s tests
-│   ├── test_cli.py / test_validate_po.py / test_orchestration.py
+│   ├── test_cli.py / test_validate_po.py / test_orchestration.py / test_plugin_manifest.py
 │   └── orchestration/                 分担パイプラインの回帰テスト(自前ハーネス run_all.py + fixtures/)
 ├── assets/
 │   └── agents/
-│       └── po-draft-translator.md     下訳専用サブエージェントの定義テンプレ(利用者が ~/.claude/agents/ にコピーする。.skillに同梱)
+│       └── po-draft-translator.md     下訳専用サブエージェントの定義(プラグインでは自動登録。.skill では利用者が ~/.claude/agents/ にコピーする。.skillに同梱)
 └── references/
     ├── notation-rules.md              全角半角・句読点・括弧・カギ括弧・カタカナ語・日付・プレースホルダー
     ├── word-choice-rules.md           訳語統一・文体・ブランド名・用語集の使い方
@@ -55,7 +58,8 @@ wordpress-ja-translation-guide/
 
 - **一次情報は常に公式ページ**: ルールを追加・変更する際は、必ず ja.wordpress.org の公式ハンドブック・スタイルガイドの該当ページを確認してから反映する。記憶や推測で書き足さない
 - **SKILL.mdは要点のみ**: 本体は500行程度を目安に収め、詳細・例文は `references/` に逃がす(progressive disclosure)。SKILL.mdに新しい詳細ルールを書きたくなったら、まず references/ のどのファイルに属すか考える
-- **並列モードは Claude Code 限定のオプションとして書く**: `.skill` は Claude.ai(Desktop / Cowork)にも配るが、そこでは Agent ツールもエージェント定義の自動登録も無い。SKILL.md の直列ループを削らず、並列は「使えるなら」の追加として書く。Skill 単体にサブエージェント定義を同梱して自動登録させることはできない(それができるのはプラグインだけ)ので、`assets/agents/` はコピーして使うテンプレとして扱う
+- **並列モードは Claude Code 限定のオプションとして書く**: `.skill` は Claude.ai(Desktop / Cowork)にも配るが、そこでは Agent ツールもエージェント定義の自動登録も無い。SKILL.md の直列ループを削らず、並列は「使えるなら」の追加として書く。Skill 単体にサブエージェント定義を同梱して自動登録させることはできない(それができるのはプラグインだけ)。`assets/agents/` の定義は 1 つだけ持ち、`.skill` ではコピーして使うテンプレ、プラグインでは `plugin.json` の `agents` から名指しして自動登録するもの、として両方に使う。エージェント名は入れ方で変わる(`po-draft-translator` / `wordpress-ja-translation-guide:po-draft-translator`)ので、手順には両方を書く
+- **プラグインのためにファイルを複製・移動しない**: プラグインとして配るのに足すのは `.claude-plugin/` のマニフェストだけ。SKILL.md・`scripts/`・`assets/agents/` はルートの構成のまま読み込ませる(`.skill` との二重管理を避けるため)。`plugin.json` に `version` は書かない(書くと、その文字列を変えるまで利用者の更新が止まる。git 配布ではコミットで更新を判定させる)。`claude plugin validate .` は、`version` が無いこととルートに CLAUDE.md があることの 2 つを警告するが、どちらも意図どおりなので `--strict` は通さない
 - **README.md を変えたら README.en.md の対応箇所も見る**: 英語版は要約版なので 1 対 1 では訳さない。概要・反映しているルール・使い方・注意事項に関わる変更は英語版にも反映し、開発者向けの細部(スクリプトのオプション・ルール表など)は README.md へのリンクで済ませる
 - **references/ が300行を超えたら目次を付ける**: 現状はまだ収まっているが、増えてきたら冒頭に目次を追加する
 - **核となる安全装置は絶対に弱めない**:

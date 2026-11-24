@@ -32,7 +32,7 @@ Grep を使ってよいのは Skill の `references/` と共通訳語リスト�
 
 ## 必ず参照するルール
 
-`wordpress-ja-translation-guide` Skill の `SKILL.md` はプリロード済み。作業開始前に以下の 3 つを Read すること(1・2 は Skill の `references/` にある。Claude Code の標準配置なら `~/.claude/skills/wordpress-ja-translation-guide/references/`):
+`wordpress-ja-translation-guide` Skill の `SKILL.md` はプリロード済み。作業開始前に以下の 3 つを Read すること(1・2 は Skill の `references/` にある。場所は Skill の入れ方で変わるので、メインがプロンプトで渡したパスを使う。渡されていなければ Claude Code の標準配置 `~/.claude/skills/wordpress-ja-translation-guide/references/` を見る。どちらにも無ければ、探し回らずにメインへ報告する):
 
 1. `notation-rules.md` — 全角半角・括弧・カタカナ長音・プレースホルダー前後のスペース
 2. `word-choice-rules.md` — 訳語統一・文体ルール

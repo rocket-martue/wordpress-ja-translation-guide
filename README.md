@@ -55,9 +55,31 @@ ja.wordpress.org 公式の[翻訳ハンドブック](https://ja.wordpress.org/te
 
 このリポジトリの [Releases](../../releases) (または直接配布されたファイル)から `wordpress-ja-translation-guide.skill` を入手し、Claude にインストールしてください。
 
+### Claude Code のプラグインとしてインストールする場合
+
+このリポジトリは、Claude Code のプラグイン(とそのマーケットプレイス)としても読み込めます。Skill に加えて、下訳専用のサブエージェントも自動で登録されます。Claude Code の中で次を実行してください。
+
+```
+/plugin marketplace add rocket-martue/wordpress-ja-translation-guide
+/plugin install wordpress-ja-translation-guide@wordpress-ja-translation-guide
+```
+
+Claude Code 2.1.275 以降では、1 行でも入れられます。
+
+```
+/plugin install wordpress-ja-translation-guide --marketplace rocket-martue/wordpress-ja-translation-guide
+```
+
+- プラグインとして入れた場合、Skill の名前は `wordpress-ja-translation-guide:wordpress-ja-translation-guide`、サブエージェントの名前は `wordpress-ja-translation-guide:po-draft-translator` になります(プラグイン名が前に付きます)
+- バージョン番号は付けていません。更新はコミット単位で反映されます
+- `.skill` や Skills ディレクトリへの配置と併用すると、Skill とサブエージェントが二重に登録されます。どちらか一方にしてください
+- 動作を確認しているのは Claude Code です。Claude.ai(Desktop / Cowork)では、上の `.skill` を使ってください
+
 ### Claude Code でサブエージェント並列を使う場合
 
-未翻訳が多い `.po` では、下訳の生成だけをサブエージェントに並列で任せられます(書き込みと validate はメインが直列で行います)。下訳専用のエージェント定義 [`assets/agents/po-draft-translator.md`](./assets/agents/po-draft-translator.md) を同梱していますが、Skill 単体では自動登録されないため、一度だけ Claude Code のエージェントディレクトリにコピーしてください。
+未翻訳が多い `.po` では、下訳の生成だけをサブエージェントに並列で任せられます(書き込みと validate はメインが直列で行います)。下訳専用のエージェント定義 [`assets/agents/po-draft-translator.md`](./assets/agents/po-draft-translator.md) を同梱しています。
+
+プラグインとして入れた場合は、定義は自動で登録されるので、コピーは要りません。`.skill` として入れた場合や Skills ディレクトリに置いた場合は、Skill 単体では自動登録されないため、一度だけ Claude Code のエージェントディレクトリにコピーしてください。
 
 ```bash
 cp ~/.claude/skills/wordpress-ja-translation-guide/assets/agents/po-draft-translator.md ~/.claude/agents/

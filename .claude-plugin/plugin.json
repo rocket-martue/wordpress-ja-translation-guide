@@ -1,0 +1,9 @@
+{
+  "name": "wordpress-ja-translation-guide",
+  "description": "WordPress のコア・プラグイン・テーマの文字列を、ja.wordpress.org 公式の翻訳スタイルガイドに沿って日本語に翻訳・レビューするための Skill と、下訳専用サブエージェント。",
+  "author": { "name": "rocket-martue" },
+  "homepage": "https://github.com/rocket-martue/wordpress-ja-translation-guide",
+  "repository": "https://github.com/rocket-martue/wordpress-ja-translation-guide",
+  "license": "GPL-2.0-or-later",
+  "agents": ["./assets/agents/po-draft-translator.md"]
+}

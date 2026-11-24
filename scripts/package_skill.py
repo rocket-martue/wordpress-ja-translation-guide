@@ -24,9 +24,11 @@ SKILL_DIR = Path(__file__).resolve().parent.parent
 # .skill に含めないディレクトリ・ファイル
 # 注: scripts/ ディレクトリ自体は同梱する(apply_translations.py と validate_po.py は
 # SKILL.md が参照するランタイムツールのため)。翻訳作業では使わないメンテナンス用の
-# package_skill.py と update_glossary.py、および開発用の tests/ は除外する
+# package_skill.py と update_glossary.py、および開発用の tests/ は除外する。
+# .claude-plugin/ は Claude Code プラグインとして配るためのマニフェストで、
+# .skill の利用者には要らないので入れない(.skill の中身をこれまでと同じに保つ)
 EXCLUDE_DIR_NAMES = {
-    ".git", ".github", ".claude", "__pycache__", "node_modules", "dist", "evals", "tests",
+    ".git", ".github", ".claude", ".claude-plugin", "__pycache__", "node_modules", "dist", "evals", "tests",
 }
 EXCLUDE_FILE_NAMES = {
     ".git",          # git worktree では .git がディレクトリではなくファイル(gitdir ポインター)になる
