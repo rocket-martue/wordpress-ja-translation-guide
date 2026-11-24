@@ -113,6 +113,29 @@ def _unescape(s: str) -> str:
     return ''.join(result)
 
 
+_LINE_BREAK_RE = re.compile(r'\r\n|\r|\n')
+
+
+def split_po_lines(text: str, keepends: bool = False) -> list[str]:
+    """
+    .po のテキストを、改行(\\r\\n / \\r / \\n)だけで行に分ける。
+
+    str.splitlines() は使わない。U+2028 / U+2029 / U+0085 / \\x0b / \\x0c /
+    \\x1c〜\\x1e でも行を区切るため、これらを生のまま含む文字列が途中で切れ、
+    `msgid "..."` の形に一致しなくなってエントリーごと見えなくなる。
+    行数と行番号は、上の文字を含まないテキストでは splitlines() と同じになる。
+    (apply_translations.py の _split_lines と同じ分け方にすること)
+    """
+    lines: list[str] = []
+    pos = 0
+    for m in _LINE_BREAK_RE.finditer(text):
+        lines.append(text[pos:m.end() if keepends else m.start()])
+        pos = m.end()
+    if pos < len(text):
+        lines.append(text[pos:])
+    return lines
+
+
 def parse_po(text: str) -> list[PoEntry]:
     """
     .po ファイルのテキストを PoEntry のリストに変換する。
@@ -164,7 +187,7 @@ def parse_po(text: str) -> list[PoEntry]:
                 entry.msgstr_plural.append("")
             entry.msgstr_plural[idx] = value
 
-    for lineno, raw in enumerate(text.splitlines(), 1):
+    for lineno, raw in enumerate(split_po_lines(text), 1):
         line = raw.strip()
 
         # 空行 → エントリー区切り

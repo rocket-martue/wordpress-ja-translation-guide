@@ -48,6 +48,7 @@ from validate_po import (  # noqa: E402
     extract_placeholders,
     resolve_paths,
     find_alpha_fw_boundaries,
+    split_po_lines,
 )
 
 
@@ -203,7 +204,7 @@ def process_file(filepath: Path, apply: bool) -> tuple[int, int, int]:
         with filepath.open('r', encoding='utf-8-sig', newline='') as f:
             text = f.read()
 
-    lines = text.splitlines(keepends=True)
+    lines = split_po_lines(text, keepends=True)
     fields = _collect_msgstr_fields(lines)
 
     changed_fields = 0

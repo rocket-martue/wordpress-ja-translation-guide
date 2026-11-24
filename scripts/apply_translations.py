@@ -517,6 +517,28 @@ def cmd_apply(po_path: Path, translations_arg: str) -> int:
 # ヘルパー
 # ---------------------------------------------------------------------------
 
+_LINE_BREAK_RE = re.compile(r'\r\n|\r|\n')
+
+
+def _split_lines(text: str) -> list[str]:
+    """
+    改行(\\r\\n / \\r / \\n)だけで行に分け、各行に改行を残す。
+
+    str.splitlines() は使わない。U+2028 / U+2029 / U+0085 / \\x0b / \\x0c /
+    \\x1c〜\\x1e でも行を区切るため、これらを生のまま含む msgid が途中で切れ、
+    エントリーごと未翻訳の列挙から落ちる。
+    (validate_po.py の split_po_lines と同じ分け方にすること)
+    """
+    lines: list[str] = []
+    pos = 0
+    for m in _LINE_BREAK_RE.finditer(text):
+        lines.append(text[pos:m.end()])
+        pos = m.end()
+    if pos < len(text):
+        lines.append(text[pos:])
+    return lines
+
+
 def _read_lines(po_path: Path) -> list[str]:
     if not po_path.exists():
         raise OSError(f"ファイルが見つかりません: {po_path}")
@@ -524,8 +546,8 @@ def _read_lines(po_path: Path) -> list[str]:
         text = po_path.read_text(encoding='utf-8')
     except UnicodeDecodeError:
         text = po_path.read_text(encoding='utf-8-sig')
-    # splitlines(keepends=True) で改行を保持した行リストにする
-    lines = text.splitlines(keepends=True)
+    # 改行を保持した行リストにする
+    lines = _split_lines(text)
     # 末尾に改行がない場合の保険
     if lines and not lines[-1].endswith('\n'):
         lines[-1] += '\n'

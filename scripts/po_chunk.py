@@ -126,7 +126,7 @@ def po_fields(text: str):
             yield cur[0], cur[1], "".join(cur[2])
             cur = None
 
-    for lineno, raw in enumerate(text.splitlines(), 1):
+    for lineno, raw in enumerate(vp.split_po_lines(text), 1):
         line = raw.strip()
         if not line:
             yield from flush()
