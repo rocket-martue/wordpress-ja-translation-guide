@@ -1,0 +1,16 @@
+{
+  "name": "wordpress-ja-translation-guide",
+  "owner": {
+    "name": "rocket-martue"
+  },
+  "metadata": {
+    "description": "WordPress の日本語翻訳を、ja.wordpress.org 公式の翻訳スタイルガイドに沿って支援する Skill のマーケットプレイス。"
+  },
+  "plugins": [
+    {
+      "name": "wordpress-ja-translation-guide",
+      "source": "./",
+      "description": "WordPress の文字列を公式の翻訳スタイルガイドに沿って日本語に翻訳・レビューする Skill と、下訳専用サブエージェント。"
+    }
+  ]
+}
